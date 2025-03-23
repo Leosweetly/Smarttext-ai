@@ -1,0 +1,251 @@
+.page {
+  --gray-rgb: 0, 0, 0;
+  --gray-alpha-200: rgba(var(--gray-rgb), 0.08);
+  --gray-alpha-100: rgba(var(--gray-rgb), 0.05);
+  --primary-color: #415A77;
+  --primary-hover: #1B263B;
+  --featured-bg: rgba(65, 90, 119, 0.05);
+  --featured-border: rgba(65, 90, 119, 0.2);
+
+  display: grid;
+  grid-template-rows: 20px 1fr 20px;
+  align-items: center;
+  justify-items: center;
+  min-height: 100svh;
+  padding: 80px;
+  gap: 64px;
+  font-family: 'Roboto', sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  .page {
+    --gray-rgb: 255, 255, 255;
+    --gray-alpha-200: rgba(var(--gray-rgb), 0.145);
+    --gray-alpha-100: rgba(var(--gray-rgb), 0.06);
+    --primary-color: #778DA9;
+    --primary-hover: #415A77;
+    --featured-bg: rgba(119, 141, 169, 0.1);
+    --featured-border: rgba(119, 141, 169, 0.3);
+  }
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  grid-row-start: 2;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0;
+  text-align: center;
+}
+
+.description {
+  font-size: 1.2rem;
+  text-align: center;
+  margin: 0 0 0.5rem 0;
+}
+
+.slogan {
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 2rem 0;
+  color: var(--primary-color);
+  font-family: 'Roboto Bold', sans-serif;
+}
+
+.pricingGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.pricingCard {
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  border-radius: 10px;
+  background: var(--gray-alpha-100);
+  border: 1px solid var(--gray-alpha-200);
+  transition: transform 0.2s, box-shadow 0.2s;
+  height: 100%;
+}
+
+.pricingCard.featured {
+  background: var(--featured-bg);
+  border: 1px solid var(--featured-border);
+  position: relative;
+  transform: scale(1.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.pricingHeader {
+  margin-bottom: 1.5rem;
+  text-align: center;
+  position: relative;
+}
+
+.popularBadge {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--primary-color);
+  color: white;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.pricingHeader h2 {
+  font-size: 1.8rem;
+  margin: 0 0 1rem 0;
+}
+
+.price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.amount {
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+.period {
+  font-size: 1rem;
+  opacity: 0.7;
+  margin-left: 4px;
+}
+
+.trial {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  margin: 0;
+}
+
+.pricingFeatures {
+  flex-grow: 1;
+  margin-bottom: 1.5rem;
+}
+
+.pricingFeatures ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pricingFeatures li {
+  margin-bottom: 0.8rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.pricingFooter {
+  margin-top: auto;
+}
+
+.button {
+  display: block;
+  width: 100%;
+  padding: 0.8rem 1.5rem;
+  background-color: var(--foreground);
+  color: var(--background);
+  text-align: center;
+  border-radius: 5px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+  text-decoration: none;
+}
+
+.button.featured {
+  background-color: var(--primary-color);
+}
+
+.button:hover {
+  background-color: var(--button-primary-hover);
+}
+
+.button.featured:hover {
+  background-color: var(--primary-hover);
+}
+
+.faq {
+  margin-top: 3rem;
+  width: 100%;
+}
+
+.faq h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.faqItem {
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  border-radius: 10px;
+  background: var(--gray-alpha-100);
+  border: 1px solid var(--gray-alpha-200);
+}
+
+.faqItem h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.faqItem p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.footer {
+  grid-row-start: 3;
+  display: flex;
+  gap: 24px;
+  width: 100%;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+.footer p {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .pricingCard.featured {
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 600px) {
+  .page {
+    padding: 32px;
+    padding-bottom: 80px;
+  }
+
+  .pricingGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .description {
+    font-size: 1rem;
+  }
+}

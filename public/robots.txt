@@ -1,0 +1,12 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Disallow crawling of authentication and dashboard pages
+Disallow: /login
+Disallow: /signup
+Disallow: /dashboard/
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://getsmarttext.com/sitemap.xml

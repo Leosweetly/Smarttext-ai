@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Twilio Integration Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    h1 {
+      color: #0070f3;
+      margin-bottom: 1rem;
+    }
+    
+    .card {
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    
+    input[type="tel"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    
+    button {
+      background-color: #0070f3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 15px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    button:hover {
+      background-color: #0060df;
+    }
+    
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .status {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 4px;
+    }
+    
+    .status.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .status.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .status.info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    
+    .status.loading {
+      background-color: #e2e3e5;
+      color: #383d41;
+      border: 1px solid #d6d8db;
+    }
+    
+    .status-details {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top-color: #0070f3;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 10px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .tab {
+      padding: 10px 15px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+    
+    .tab.active {
+      border-bottom: 2px solid #0070f3;
+      color: #0070f3;
+      font-weight: 500;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .instructions {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    
+    .instructions h3 {
+      margin-top: 0;
+    }
+    
+    .instructions ol {
+      padding-left: 20px;
+    }
+    
+    .instructions li {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Twilio Integration Test</h1>
+  
+  <div class="tabs">
+    <div class="tab active" data-tab="test">Test Configuration</div>
+    <div class="tab" data-tab="simulate">Simulate Missed Call</div>
+    <div class="tab" data-tab="instructions">Instructions</div>
+  </div>
+  
+  <div id="test-tab" class="tab-content active">
+    <div class="card">
+      <h2>Test Twilio Configuration</h2>
+      <p>Check if your Twilio number is properly configured for missed call auto-texting.</p>
+      
+      <div class="form-group">
+        <label for="phone-number">Twilio Phone Number</label>
+        <input type="tel" id="phone-number" placeholder="+18186518560" value="+18186518560">
+      </div>
+      
+      <button id="check-status-btn">Check Status</button>
+      
+      <div id="status-container" class="hidden status">
+        <div id="status-message"></div>
+        <div id="status-details" class="status-details hidden"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="simulate-tab" class="tab-content">
+    <div class="card">
+      <h2>Simulate Missed Call</h2>
+      <p>Simulate a missed call to test the auto-text functionality.</p>
+      
+      <div class="form-group">
+        <label for="twilio-number">Twilio Phone Number</label>
+        <input type="tel" id="twilio-number" placeholder="+18186518560" value="+18186518560">
+      </div>
+      
+      <div class="form-group">
+        <label for="caller-number">Caller Phone Number (Your number to receive the text)</label>
+        <input type="tel" id="caller-number" placeholder="+1234567890">
+      </div>
+      
+      <button id="simulate-btn">Simulate Missed Call</button>
+      
+      <div id="simulate-status" class="hidden status">
+        <div id="simulate-message"></div>
+        <div id="simulate-details" class="status-details hidden"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="instructions-tab" class="tab-content">
+    <div class="card">
+      <h2>How to Test Your Twilio Integration</h2>
+      
+      <div class="instructions">
+        <h3>Option 1: Check Configuration</h3>
+        <ol>
+          <li>Enter your Twilio phone number in the "Test Configuration" tab.</li>
+          <li>Click "Check Status" to verify if the number is properly configured.</li>
+          <li>The system will check if the number exists in your Twilio account and if it's configured for missed call auto-texting.</li>
+        </ol>
+      </div>
+      
+      <div class="instructions">
+        <h3>Option 2: Simulate a Missed Call</h3>
+        <ol>
+          <li>Enter your Twilio phone number in the "Simulate Missed Call" tab.</li>
+          <li>Enter your personal phone number that will receive the auto-text.</li>
+          <li>Click "Simulate Missed Call" to trigger the auto-text system.</li>
+          <li>You should receive a text message shortly after.</li>
+        </ol>
+      </div>
+      
+      <div class="instructions">
+        <h3>Option 3: Make a Real Call</h3>
+        <ol>
+          <li>Call the Twilio number (+18186518560) from your phone.</li>
+          <li>Hang up before the call is answered.</li>
+          <li>You should receive an automated text message shortly after.</li>
+        </ol>
+      </div>
+      
+      <p><strong>Note:</strong> For the simulation to work, your application must be running and properly configured with Twilio credentials.</p>
+    </div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Tab switching
+      const tabs = document.querySelectorAll('.tab');
+      const tabContents = document.querySelectorAll('.tab-content');
+      
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const tabId = tab.getAttribute('data-tab');
+          
+          // Update active tab
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          
+          // Show active content
+          tabContents.forEach(content => {
+            content.classList.remove('active');
+            if (content.id === `${tabId}-tab`) {
+              content.classList.add('active');
+            }
+          });
+        });
+      });
+      
+      // Check status functionality
+      const checkStatusBtn = document.getElementById('check-status-btn');
+      const phoneNumberInput = document.getElementById('phone-number');
+      const statusContainer = document.getElementById('status-container');
+      const statusMessage = document.getElementById('status-message');
+      const statusDetails = document.getElementById('status-details');
+      
+      checkStatusBtn.addEventListener('click', async () => {
+        const phoneNumber = phoneNumberInput.value.trim();
+        
+        if (!phoneNumber) {
+          showStatus('error', 'Please enter a phone number');
+          return;
+        }
+        
+        // Show loading state
+        checkStatusBtn.disabled = true;
+        showStatus('loading', '<div class="spinner"></div> Checking Twilio configuration...');
+        
+        try {
+          const response = await fetch('/api/twilio/status', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ phoneNumber })
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            if (data.status.exists && data.status.isConfigured) {
+              showStatus('success', '✅ Phone number is properly configured for missed call auto-texting');
+              showDetails(JSON.stringify(data.status, null, 2));
+            } else if (data.status.exists && !data.status.isConfigured) {
+              showStatus('error', '❌ Phone number exists but is not properly configured');
+              showDetails(JSON.stringify(data.status, null, 2));
+            } else {
+              showStatus('error', '❌ Phone number not found in your Twilio account');
+            }
+          } else {
+            showStatus('error', `❌ Error: ${data.error}`);
+          }
+        } catch (error) {
+          showStatus('error', `❌ Error: ${error.message}`);
+        } finally {
+          checkStatusBtn.disabled = false;
+        }
+      });
+      
+      // Simulate missed call functionality
+      const simulateBtn = document.getElementById('simulate-btn');
+      const twilioNumberInput = document.getElementById('twilio-number');
+      const callerNumberInput = document.getElementById('caller-number');
+      const simulateStatus = document.getElementById('simulate-status');
+      const simulateMessage = document.getElementById('simulate-message');
+      const simulateDetails = document.getElementById('simulate-details');
+      
+      simulateBtn.addEventListener('click', async () => {
+        const twilioNumber = twilioNumberInput.value.trim();
+        const callerNumber = callerNumberInput.value.trim();
+        
+        if (!twilioNumber) {
+          showSimulateStatus('error', 'Please enter a Twilio phone number');
+          return;
+        }
+        
+        if (!callerNumber) {
+          showSimulateStatus('error', 'Please enter a caller phone number');
+          return;
+        }
+        
+        // Show loading state
+        simulateBtn.disabled = true;
+        showSimulateStatus('loading', '<div class="spinner"></div> Simulating missed call...');
+        
+        try {
+          // Create form data for the request
+          const formData = new FormData();
+          formData.append('From', callerNumber);
+          formData.append('To', twilioNumber);
+          formData.append('CallStatus', 'no-answer');
+          
+          const response = await fetch('/api/missed-call', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            showSimulateStatus('success', '✅ Missed call simulation successful!');
+            showSimulateDetails(`📱 Auto-text message sent: "${data.message}"`);
+          } else {
+            showSimulateStatus('error', `❌ Missed call simulation failed: ${data.error}`);
+          }
+        } catch (error) {
+          showSimulateStatus('error', `❌ Error: ${error.message}`);
+        } finally {
+          simulateBtn.disabled = false;
+        }
+      });
+      
+      // Helper functions
+      function showStatus(type, message) {
+        statusContainer.className = `status ${type}`;
+        statusMessage.innerHTML = message;
+        statusContainer.classList.remove('hidden');
+      }
+      
+      function showDetails(details) {
+        statusDetails.textContent = details;
+        statusDetails.classList.remove('hidden');
+      }
+      
+      function showSimulateStatus(type, message) {
+        simulateStatus.className = `status ${type}`;
+        simulateMessage.innerHTML = message;
+        simulateStatus.classList.remove('hidden');
+      }
+      
+      function showSimulateDetails(details) {
+        simulateDetails.textContent = details;
+        simulateDetails.classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "id": "test-user-id",
+  "email": "test@example.com",
+  "name": "Test User",
+  "phone": "+1 (555) 123-4567",
+  "businessName": "Test Business",
+  "businessType": "restaurant",
+  "subscription": {
+    "status": "active",
+    "plan": "pro",
+    "currentPeriodEnd": "2025-04-21T00:00:00.000Z",
+    "cancelAtPeriodEnd": false
+  },
+  "createdAt": "2024-10-15T00:00:00.000Z"
+}

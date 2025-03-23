@@ -1,0 +1,57 @@
+{
+  "id": "sub_123456789",
+  "status": "active",
+  "plan": "pro",
+  "currentPeriodStart": "2025-02-21T00:00:00.000Z",
+  "currentPeriodEnd": "2025-04-21T00:00:00.000Z",
+  "cancelAtPeriodEnd": false,
+  "canceledAt": null,
+  "items": [
+    {
+      "id": "si_123456",
+      "price": {
+        "id": "price_123456",
+        "product": "prod_123456",
+        "nickname": "Pro Plan",
+        "unit_amount": 39900,
+        "currency": "usd",
+        "recurring": {
+          "interval": "month",
+          "interval_count": 1
+        }
+      }
+    }
+  ],
+  "default_payment_method": {
+    "id": "pm_123456",
+    "type": "card",
+    "card": {
+      "brand": "visa",
+      "last4": "4242",
+      "exp_month": 12,
+      "exp_year": 2026
+    }
+  },
+  "billing_history": [
+    {
+      "id": "in_123456",
+      "number": "INV-001",
+      "status": "paid",
+      "amount_paid": 39900,
+      "currency": "usd",
+      "created": "2025-03-21T00:00:00.000Z",
+      "period_start": "2025-03-21T00:00:00.000Z",
+      "period_end": "2025-04-21T00:00:00.000Z"
+    },
+    {
+      "id": "in_123455",
+      "number": "INV-002",
+      "status": "paid",
+      "amount_paid": 39900,
+      "currency": "usd",
+      "created": "2025-02-21T00:00:00.000Z",
+      "period_start": "2025-02-21T00:00:00.000Z",
+      "period_end": "2025-03-21T00:00:00.000Z"
+    }
+  ]
+}

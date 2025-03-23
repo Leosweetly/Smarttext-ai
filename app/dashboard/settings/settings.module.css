@@ -1,0 +1,241 @@
+.settingsPage {
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.editButton, .saveButton, .addButton {
+  padding: 0.6rem 1.2rem;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border: none;
+}
+
+.editButton {
+  background-color: var(--gray-alpha-200);
+  color: var(--foreground);
+}
+
+.editButton:hover {
+  background-color: var(--gray-alpha-100);
+}
+
+.saveButton {
+  background-color: #0070f3;
+  color: white;
+}
+
+.saveButton:hover:not(:disabled) {
+  background-color: #0060df;
+}
+
+.saveButton:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.savedIndicator {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.settingsForm {
+  width: 100%;
+}
+
+.section {
+  margin-bottom: 2.5rem;
+  background-color: var(--gray-alpha-100);
+  border: 1px solid var(--gray-alpha-200);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.sectionTitle {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0 0 1.5rem 0;
+}
+
+.formGroup {
+  margin-bottom: 1.2rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.input, .textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--gray-alpha-200);
+  border-radius: 5px;
+  font-size: 1rem;
+  background-color: var(--background);
+  color: var(--foreground);
+  transition: border-color 0.2s;
+}
+
+.input:focus, .textarea:focus {
+  outline: none;
+  border-color: #0070f3;
+}
+
+.input:disabled, .textarea:disabled {
+  background-color: var(--gray-alpha-100);
+  cursor: not-allowed;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.hoursGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.hourRow {
+  display: flex;
+  flex-direction: column;
+}
+
+.faqList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.faqItem {
+  padding: 1.5rem;
+  background-color: var(--background);
+  border: 1px solid var(--gray-alpha-200);
+  border-radius: 8px;
+}
+
+.faqHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.faqHeader h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.removeButton {
+  padding: 0.4rem 0.8rem;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.removeButton:hover {
+  background-color: #dc2626;
+}
+
+.addFaqSection {
+  padding: 1.5rem;
+  background-color: var(--background);
+  border: 1px solid var(--gray-alpha-200);
+  border-radius: 8px;
+}
+
+.addFaqSection h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+}
+
+.addButton {
+  background-color: #10b981;
+  color: white;
+  margin-top: 0.5rem;
+}
+
+.addButton:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+.addButton:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Data Connections Styles */
+.sectionDescription {
+  margin-top: -0.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--gray-alpha-800);
+}
+
+.connectionCard {
+  background-color: var(--background);
+  border: 1px solid var(--gray-alpha-200);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.connectionTitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+}
+
+.connectionDescription {
+  margin-bottom: 1.5rem;
+  color: var(--gray-alpha-800);
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .actions {
+    width: 100%;
+  }
+  
+  .editButton, .saveButton {
+    flex: 1;
+  }
+  
+  .hoursGrid {
+    grid-template-columns: 1fr;
+  }
+}

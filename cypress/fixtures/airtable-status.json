@@ -1,0 +1,37 @@
+{
+  "connected": true,
+  "workspaces": [
+    {
+      "id": "workspace1",
+      "name": "Main Workspace"
+    }
+  ],
+  "bases": [
+    {
+      "id": "base1",
+      "name": "Customer Database"
+    },
+    {
+      "id": "base2",
+      "name": "Inventory"
+    }
+  ],
+  "tables": [
+    {
+      "id": "tbl1",
+      "name": "Customers",
+      "baseId": "base1"
+    },
+    {
+      "id": "tbl2",
+      "name": "Orders",
+      "baseId": "base1"
+    },
+    {
+      "id": "tbl3",
+      "name": "Products",
+      "baseId": "base2"
+    }
+  ],
+  "lastSynced": "2025-03-21T16:45:00.000Z"
+}

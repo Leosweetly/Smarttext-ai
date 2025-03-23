@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Standalone Twilio Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    h1, h2, h3 {
+      color: #0070f3;
+    }
+    
+    .card {
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .instructions {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    
+    .instructions ol {
+      padding-left: 20px;
+    }
+    
+    .instructions li {
+      margin-bottom: 10px;
+    }
+    
+    .note {
+      background-color: #fff8e1;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    
+    .phone-number {
+      font-size: 24px;
+      font-weight: bold;
+      color: #0070f3;
+      text-align: center;
+      padding: 15px;
+      margin: 20px 0;
+      border: 2px dashed #0070f3;
+      border-radius: 8px;
+    }
+    
+    .result-section {
+      margin-top: 30px;
+    }
+    
+    .result-form {
+      margin-top: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    
+    input[type="radio"] {
+      margin-right: 10px;
+    }
+    
+    button {
+      background-color: #0070f3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 15px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    button:hover {
+      background-color: #0060df;
+    }
+    
+    .results {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 4px;
+      background-color: #f8f9fa;
+    }
+    
+    .success {
+      color: #28a745;
+    }
+    
+    .error {
+      color: #dc3545;
+    }
+    
+    .steps {
+      counter-reset: step;
+    }
+    
+    .step {
+      margin-bottom: 20px;
+      padding-left: 50px;
+      position: relative;
+    }
+    
+    .step::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 35px;
+      height: 35px;
+      background-color: #0070f3;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Standalone Twilio Test</h1>
+  
+  <div class="card">
+    <h2>Test Phone Number</h2>
+    <div class="phone-number">+18186518560</div>
+    
+    <div class="instructions">
+      <h3>How to Test</h3>
+      <div class="steps">
+        <div class="step">
+          <h4>Call the number</h4>
+          <p>Use your mobile phone to call the number above.</p>
+        </div>
+        
+        <div class="step">
+          <h4>Hang up before it's answered</h4>
+          <p>Don't wait for the call to be answered. Hang up after a few rings.</p>
+        </div>
+        
+        <div class="step">
+          <h4>Wait for a text message</h4>
+          <p>If the number is configured for auto-texting, you should receive a text message shortly after hanging up.</p>
+        </div>
+        
+        <div class="step">
+          <h4>Record your result</h4>
+          <p>Use the form below to record whether you received a text message.</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="note">
+      <strong>Note:</strong> This test doesn't require any server setup or API calls. It's a direct test of the phone number's configuration.
+    </div>
+  </div>
+  
+  <div class="card result-section">
+    <h2>Test Results</h2>
+    
+    <div class="result-form">
+      <h3>Did you receive an auto-text message?</h3>
+      
+      <div class="form-group">
+        <label>
+          <input type="radio" name="result" value="yes" id="result-yes">
+          Yes, I received a text message
+        </label>
+      </div>
+      
+      <div class="form-group">
+        <label>
+          <input type="radio" name="result" value="no" id="result-no">
+          No, I didn't receive any text message
+        </label>
+      </div>
+      
+      <button id="submit-result">Submit Result</button>
+    </div>
+    
+    <div id="results" class="results" style="display: none;"></div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const submitButton = document.getElementById('submit-result');
+      const resultsDiv = document.getElementById('results');
+      const resultYes = document.getElementById('result-yes');
+      const resultNo = document.getElementById('result-no');
+      
+      submitButton.addEventListener('click', function() {
+        if (resultYes.checked) {
+          resultsDiv.innerHTML = `
+            <h3 class="success">✅ Success!</h3>
+            <p>The phone number is properly configured for auto-texting.</p>
+            <p>This confirms that the Twilio number +18186518560 is set up to send automatic text messages when calls are missed.</p>
+          `;
+          resultsDiv.style.display = 'block';
+        } else if (resultNo.checked) {
+          resultsDiv.innerHTML = `
+            <h3 class="error">❌ Not Configured</h3>
+            <p>The phone number does not appear to be configured for auto-texting.</p>
+            <p>Possible reasons:</p>
+            <ul>
+              <li>The number is not set up with Twilio's missed call auto-text feature</li>
+              <li>The auto-texting service is currently inactive</li>
+              <li>There might be an issue with the Twilio account associated with this number</li>
+            </ul>
+            <p>If you own this Twilio number, you can configure it using the tools provided in the SmartText AI application.</p>
+          `;
+          resultsDiv.style.display = 'block';
+        } else {
+          alert('Please select a result');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

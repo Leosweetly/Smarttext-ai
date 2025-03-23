@@ -1,0 +1,6 @@
+name,businessType,phoneNumber,address,subscriptionTier,hours,orderingLink,quoteLink,bookingLink,hasMultipleLocations
+"Joe's Pizza","restaurant","+18186518560","123 Main St, Anytown, CA 12345","basic","Monday-Friday: 9 AM - 9 PM, Saturday-Sunday: 10 AM - 10 PM","https://joespizza.com/order",,,false
+"Quick Fix Auto","auto shop","+18186518561","456 Oak St, Anytown, CA 12345","pro","Monday-Friday: 8 AM - 6 PM, Saturday: 9 AM - 3 PM",,"https://quickfixauto.com/quote",,false
+"Glamour Salon","salon","+18186518562","789 Elm St, Anytown, CA 12345","enterprise","Tuesday-Saturday: 9 AM - 7 PM",,,"https://glamoursalon.com/book",false
+"City Dental Group","dental","","1010 Pine St, Anytown, CA 12345","basic","Monday-Thursday: 8 AM - 5 PM, Friday: 8 AM - 2 PM",,,"https://citydental.com/appointments",true
+"Metro Fitness","gym","+18186518563","222 Fitness Way, Anytown, CA 12345","pro","Monday-Friday: 5 AM - 10 PM, Saturday-Sunday: 7 AM - 8 PM",,,https://metrofitness.com/schedule,false
