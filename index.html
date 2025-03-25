@@ -3,80 +3,932 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartText AI - Coming Soon</title>
+    <title>SmartText AI - Texting that works as hard as you do</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Analytics Tracking (Placeholder) -->
+    <script>
+      // Google Analytics (GA4) placeholder
+      // window.dataLayer = window.dataLayer || [];
+      // function gtag(){dataLayer.push(arguments);}
+      // gtag('js', new Date());
+      // gtag('config', 'G-XXXXXXXXXX');
+    </script>
+
+    <!-- Facebook Pixel placeholder -->
+    <script>
+      // !function(f,b,e,v,n,t,s)
+      // {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      // n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      // if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      // n.queue=[];t=b.createElement(e);t.async=!0;
+      // t.src=v;s=b.getElementsByTagName(e)[0];
+      // s.parentNode.insertBefore(t,s)}(window, document,'script',
+      // 'https://connect.facebook.net/en_US/fbevents.js');
+      // fbq('init', 'XXXXXXXXXXXXXXXXX');
+      // fbq('track', 'PageView');
+    </script>
+
+    <!-- PostHog placeholder -->
+    <script>
+      // !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+      // posthog.init('phc_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',{api_host:'https://app.posthog.com'})
+    </script>
+    
     <style>
+        :root {
+            /* Color system */
+            --color-dark: #0D1B2A;
+            --color-darker: #1B263B;
+            --color-primary: #415A77;
+            --color-accent: #778DA9;
+            --color-light: #E0E1DD;
+            
+            /* Spacing system */
+            --space-xs: 0.5rem;
+            --space-sm: 1rem;
+            --space-md: 2rem;
+            --space-lg: 3rem;
+            --space-xl: 5rem;
+            
+            /* Typography */
+            --font-family: 'Roboto', sans-serif;
+            --font-size-base: 1rem;
+            --line-height-base: 1.5;
+        }
+
+        /* Reset & Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
+            font-family: var(--font-family);
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-base);
+            color: var(--color-dark);
+            background-color: #fff;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        a {
+            text-decoration: none;
+            color: var(--color-primary);
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: var(--color-accent);
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 0 var(--space-sm);
+        }
+
+        /* Typography */
+        .heading-xl {
+            font-family: var(--font-family);
+            font-weight: 700;
+            font-size: 2.5rem;
+            line-height: 1.2;
+            margin-bottom: var(--space-md);
+        }
+
+        .heading-lg {
+            font-family: var(--font-family);
+            font-weight: 700;
+            font-size: 2rem;
+            line-height: 1.2;
+            margin-bottom: var(--space-sm);
+        }
+
+        .heading-md {
+            font-family: var(--font-family);
+            font-weight: 700;
+            font-size: 1.5rem;
+            line-height: 1.3;
+            margin-bottom: var(--space-sm);
+        }
+
+        .heading-sm {
+            font-family: var(--font-family);
+            font-weight: 700;
+            font-size: 1.25rem;
+            line-height: 1.3;
+            margin-bottom: var(--space-xs);
+        }
+
+        .body-lg {
+            font-family: var(--font-family);
+            font-weight: 400;
+            font-size: 1.25rem;
+            line-height: var(--line-height-base);
+        }
+
+        .body-md {
+            font-family: var(--font-family);
+            font-weight: 400;
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-base);
+        }
+
+        .body-sm {
+            font-family: var(--font-family);
+            font-weight: 400;
+            font-size: 0.875rem;
+            line-height: var(--line-height-base);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: var(--space-sm) var(--space-md);
+            border-radius: 4px;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--color-accent);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--color-primary);
+            border: 2px solid var(--color-primary);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--color-primary);
+            color: white;
+        }
+
+        /* Header */
+        .site-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding: var(--space-sm) 0;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: 0.5px;
+            color: var(--color-dark);
+        }
+
+        .nav-toggle {
+            display: none;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: var(--space-md);
+        }
+
+        .nav-link {
+            font-weight: 500;
+            color: var(--color-dark);
+        }
+
+        .nav-link:hover {
+            color: var(--color-primary);
+        }
+
+        .header-cta {
+            margin-left: var(--space-md);
+        }
+
+        /* Hero Section */
+        .hero {
+            background-color: var(--color-dark);
+            color: white;
+            padding: calc(var(--space-xl) * 2) 0 var(--space-xl);
+            margin-top: 60px; /* Account for fixed header */
+        }
+
+        .hero-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             text-align: center;
         }
-        h1 {
-            color: #10A37F;
-            margin-top: 50px;
+
+        .hero-content {
+            max-width: 600px;
+            margin-bottom: var(--space-lg);
         }
-        .logo {
-            max-width: 150px;
-            margin-bottom: 20px;
+
+        .hero-title {
+            color: var(--color-light);
+            margin-bottom: var(--space-sm);
         }
-        .container {
-            margin-top: 50px;
+
+        .hero-subtitle {
+            color: var(--color-light);
+            opacity: 0.9;
+            margin-bottom: var(--space-md);
         }
-        .coming-soon {
-            font-size: 24px;
-            margin: 30px 0;
+
+        .hero-buttons {
+            display: flex;
+            gap: var(--space-sm);
+            justify-content: center;
+            margin-bottom: var(--space-lg);
         }
-        .description {
-            font-size: 18px;
-            margin-bottom: 40px;
+
+        .hero-image {
+            max-width: 800px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
+
+        /* Features Section */
         .features {
-            text-align: left;
-            max-width: 500px;
-            margin: 0 auto;
-            margin-bottom: 40px;
+            padding: var(--space-xl) 0;
+            background-color: var(--color-light);
         }
-        .features li {
-            margin-bottom: 10px;
+
+        .section-title {
+            text-align: center;
+            margin-bottom: var(--space-lg);
         }
-        .contact {
-            margin-top: 50px;
-            font-size: 16px;
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-md);
         }
-        .footer {
-            margin-top: 100px;
-            font-size: 14px;
+
+        .feature-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: var(--space-md);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            color: var(--color-primary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .feature-title {
+            margin-bottom: var(--space-xs);
+        }
+
+        .feature-description {
+            color: #555;
+        }
+
+        /* Industries Section */
+        .industries {
+            padding: var(--space-xl) 0;
+            background-color: var(--color-darker);
+            color: white;
+        }
+
+        .industries-title {
+            color: var(--color-light);
+        }
+
+        .industries-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-md);
+        }
+
+        .industry-card {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .industry-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .industry-image {
+            height: 200px;
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .industry-content {
+            padding: var(--space-md);
+        }
+
+        .industry-title {
+            margin-bottom: var(--space-xs);
+            color: var(--color-light);
+        }
+
+        .industry-description {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Pricing Section */
+        .pricing {
+            padding: var(--space-xl) 0;
+            background-color: white;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-md);
+        }
+
+        .pricing-card {
+            background-color: var(--color-light);
+            border-radius: 8px;
+            padding: var(--space-md);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pricing-card.featured {
+            background-color: white;
+            border: 2px solid var(--color-primary);
+            transform: scale(1.05);
+            position: relative;
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -12px;
+            right: var(--space-md);
+            background-color: var(--color-primary);
+            color: white;
+            padding: 4px var(--space-sm);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .pricing-header {
+            text-align: center;
+            margin-bottom: var(--space-md);
+            padding-bottom: var(--space-md);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .pricing-title {
+            margin-bottom: var(--space-xs);
+        }
+
+        .pricing-price {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: var(--space-xs);
+        }
+
+        .pricing-period {
+            font-size: 1rem;
             color: #666;
+        }
+
+        .pricing-features {
+            margin-bottom: var(--space-md);
+            flex-grow: 1;
+        }
+
+        .pricing-features ul {
+            list-style: disc;
+            padding-left: var(--space-md);
+        }
+
+        .pricing-features li {
+            margin-bottom: var(--space-xs);
+        }
+
+        .pricing-footer {
+            text-align: center;
+        }
+
+        /* Trusted By Section */
+        .trusted-by {
+            padding: var(--space-xl) 0;
+            background-color: var(--color-light);
+            text-align: center;
+        }
+
+        .logos-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--space-lg);
+            margin-top: var(--space-md);
+        }
+
+        .logo-placeholder {
+            width: 120px;
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(0, 0, 0, 0.3);
+            font-weight: 500;
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: var(--space-xl) 0;
+            background-color: var(--color-dark);
+            color: white;
+            text-align: center;
+        }
+
+        .cta-title {
+            color: var(--color-light);
+            margin-bottom: var(--space-md);
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: var(--space-sm);
+            justify-content: center;
+        }
+
+        /* Footer */
+        .site-footer {
+            padding: var(--space-lg) 0;
+            background-color: var(--color-darker);
+            color: var(--color-light);
+        }
+
+        .footer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .footer-logo {
+            margin-bottom: var(--space-md);
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: 0.5px;
+            color: var(--color-light);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
+        }
+
+        .footer-link {
+            color: var(--color-light);
+            opacity: 0.8;
+        }
+
+        .footer-link:hover {
+            opacity: 1;
+        }
+
+        .footer-contact {
+            margin-bottom: var(--space-md);
+        }
+
+        .footer-copyright {
+            opacity: 0.6;
+        }
+
+        /* Mobile Navigation */
+        @media (max-width: 768px) {
+            .nav-toggle {
+                display: block;
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                color: var(--color-dark);
+                cursor: pointer;
+            }
+
+            .nav-menu {
+                position: fixed;
+                top: 60px;
+                left: 0;
+                width: 100%;
+                background-color: white;
+                flex-direction: column;
+                padding: var(--space-md);
+                box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+                transform: translateY(-100%);
+                opacity: 0;
+                pointer-events: none;
+                transition: all 0.3s ease;
+            }
+
+            .nav-menu.active {
+                transform: translateY(0);
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .header-cta {
+                margin-left: 0;
+                margin-top: var(--space-sm);
+            }
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .heading-xl {
+                font-size: 2rem;
+            }
+
+            .heading-lg {
+                font-size: 1.75rem;
+            }
+
+            .hero {
+                padding: calc(var(--space-xl) + 60px) 0 var(--space-lg);
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .hero-buttons .btn {
+                width: 100%;
+            }
+
+            .pricing-card.featured {
+                transform: none;
+            }
+
+            .pricing-grid {
+                gap: var(--space-lg);
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                width: 100%;
+                max-width: 300px;
+                margin: 0 auto;
+            }
+
+            .cta-buttons .btn {
+                width: 100%;
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .pricing-card.featured {
+                transform: scale(1.03);
+            }
+        }
+
+        /* Hamburger Icon */
+        .hamburger {
+            width: 24px;
+            height: 18px;
+            position: relative;
+            transform: rotate(0deg);
+            transition: .5s ease-in-out;
+            cursor: pointer;
+        }
+
+        .hamburger span {
+            display: block;
+            position: absolute;
+            height: 3px;
+            width: 100%;
+            background: var(--color-dark);
+            border-radius: 3px;
+            opacity: 1;
+            left: 0;
+            transform: rotate(0deg);
+            transition: .25s ease-in-out;
+        }
+
+        .hamburger span:nth-child(1) {
+            top: 0px;
+        }
+
+        .hamburger span:nth-child(2), .hamburger span:nth-child(3) {
+            top: 8px;
+        }
+
+        .hamburger span:nth-child(4) {
+            top: 16px;
+        }
+
+        .hamburger.open span:nth-child(1) {
+            top: 8px;
+            width: 0%;
+            left: 50%;
+        }
+
+        .hamburger.open span:nth-child(2) {
+            transform: rotate(45deg);
+        }
+
+        .hamburger.open span:nth-child(3) {
+            transform: rotate(-45deg);
+        }
+
+        .hamburger.open span:nth-child(4) {
+            top: 8px;
+            width: 0%;
+            left: 50%;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>SmartText AI</h1>
-        <p class="coming-soon">Coming Soon</p>
-        <p class="description">
-            AI-powered text automation for businesses.<br>
-            Automatically respond to missed calls with personalized text messages.
-        </p>
-        <div class="features">
-            <h2>Features</h2>
-            <ul>
-                <li><strong>Automated Responses:</strong> Never miss a potential customer again. When you miss a call, SmartText AI automatically sends a personalized text message.</li>
-                <li><strong>Industry-Specific Templates:</strong> Pre-built templates for restaurants, auto shops, salons, and more.</li>
-                <li><strong>Custom AI Responses:</strong> Our AI generates personalized messages based on your business type and customer needs.</li>
-                <li><strong>Easy Integration:</strong> Works with your existing phone system with no hardware changes required.</li>
-            </ul>
+    <!-- Header -->
+    <header class="site-header">
+        <div class="container header-container">
+            <a href="#" class="logo">SmartText AI</a>
+            
+            <button class="nav-toggle" aria-label="Toggle navigation">
+                <div class="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </button>
+            
+            <nav>
+                <ul class="nav-menu">
+                    <li><a href="#features" class="nav-link">Features</a></li>
+                    <li><a href="#industries" class="nav-link">Industries</a></li>
+                    <li><a href="#pricing" class="nav-link">Pricing</a></li>
+                    <li><a href="#contact" class="nav-link">Contact</a></li>
+                    <li><a href="#" class="btn btn-primary header-cta">Book a Demo</a></li>
+                </ul>
+            </nav>
         </div>
-        <div class="contact">
-            <p>For more information, please contact us at:</p>
-            <p><a href="mailto:info@getsmarttext.com">info@getsmarttext.com</a></p>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero" id="home">
+            <div class="container hero-container">
+                <div class="hero-content">
+                    <h1 class="heading-xl hero-title">Texting that works as hard as you do.</h1>
+                    <p class="body-lg hero-subtitle">AI-powered text automation that helps businesses never miss a potential customer.</p>
+                    <div class="hero-buttons">
+                        <a href="#" class="btn btn-primary">Book a Demo</a>
+                        <a href="#" class="btn btn-secondary">Try It Now</a>
+                    </div>
+                </div>
+                <img src="public/images/landing/hero-image.jpg" alt="SmartText AI in action" class="hero-image">
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features" id="features">
+            <div class="container">
+                <h2 class="heading-lg section-title">What It Does</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">📱</div>
+                        <h3 class="heading-md feature-title">Automated Responses</h3>
+                        <p class="body-md feature-description">Never miss a potential customer again. When you miss a call, SmartText AI automatically sends a personalized text message.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📝</div>
+                        <h3 class="heading-md feature-title">Industry Templates</h3>
+                        <p class="body-md feature-description">Pre-built templates for restaurants, auto shops, salons, and more. Customized to your specific business needs.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🤖</div>
+                        <h3 class="heading-md feature-title">AI-Powered</h3>
+                        <p class="body-md feature-description">Our AI generates personalized messages based on your business type and customer needs, increasing engagement and conversion.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔄</div>
+                        <h3 class="heading-md feature-title">Easy Integration</h3>
+                        <p class="body-md feature-description">Works with your existing phone system with no hardware changes required. Set up in minutes, not days.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Industries Section -->
+        <section class="industries" id="industries">
+            <div class="container">
+                <h2 class="heading-lg section-title industries-title">Who It's For</h2>
+                <div class="industries-grid">
+                    <div class="industry-card">
+                        <img src="public/images/landing/auto-shop.jpg" alt="Auto Shop" class="industry-image">
+                        <div class="industry-content">
+                            <h3 class="heading-md industry-title">Auto Shops</h3>
+                            <p class="body-md industry-description">Automatically follow up with customers who call about repairs or maintenance, and never miss a service opportunity.</p>
+                        </div>
+                    </div>
+                    <div class="industry-card">
+                        <img src="public/images/landing/restaurant.jpg" alt="Restaurant" class="industry-image">
+                        <div class="industry-content">
+                            <h3 class="heading-md industry-title">Restaurants</h3>
+                            <p class="body-md industry-description">Convert missed reservation calls into bookings with instant text responses and easy reservation links.</p>
+                        </div>
+                    </div>
+                    <div class="industry-card">
+                        <img src="public/images/landing/salon.jpg" alt="Salon" class="industry-image">
+                        <div class="industry-content">
+                            <h3 class="heading-md industry-title">Salons & Spas</h3>
+                            <p class="body-md industry-description">Capture appointment requests even when you're busy with clients, with automated booking options.</p>
+                        </div>
+                    </div>
+                    <div class="industry-card">
+                        <img src="public/images/landing/business-meeting.jpg" alt="Professional Services" class="industry-image">
+                        <div class="industry-content">
+                            <h3 class="heading-md industry-title">Professional Services</h3>
+                            <p class="body-md industry-description">Respond to client inquiries promptly, even when you're in meetings or unavailable to take calls.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing Section -->
+        <section class="pricing" id="pricing">
+            <div class="container">
+                <h2 class="heading-lg section-title">Simple Pricing</h2>
+                <div class="pricing-grid">
+                    <!-- Core Plan -->
+                    <div class="pricing-card">
+                        <div class="pricing-header">
+                            <h3 class="heading-md pricing-title">Core</h3>
+                            <div class="pricing-price">$249<span class="pricing-period">/mo</span></div>
+                            <p class="body-sm">7-day free trial</p>
+                        </div>
+                        <div class="pricing-features">
+                            <ul>
+                                <li>Auto-text for missed calls</li>
+                                <li>Pre-built industry response templates</li>
+                                <li>Two-way SMS Inbox</li>
+                                <li>Basic contact log + history</li>
+                                <li>Simple appointment booking</li>
+                                <li>Tag and organize leads manually</li>
+                                <li>No setup fees. Cancel anytime.</li>
+                            </ul>
+                        </div>
+                        <div class="pricing-footer">
+                            <a href="#" class="btn btn-primary">Start Free Trial</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Pro Plan -->
+                    <div class="pricing-card featured">
+                        <div class="popular-badge">Most Popular</div>
+                        <div class="pricing-header">
+                            <h3 class="heading-md pricing-title">Pro</h3>
+                            <div class="pricing-price">$399<span class="pricing-period">/mo</span></div>
+                            <p class="body-sm">7-day free trial</p>
+                        </div>
+                        <div class="pricing-features">
+                            <ul>
+                                <li>Everything in Core, plus:</li>
+                                <li>CRM integration</li>
+                                <li>AI-powered custom replies</li>
+                                <li>Lead qualification flows</li>
+                                <li>Shared inbox with team assignments</li>
+                                <li>Advanced tagging & customer notes</li>
+                                <li>Mobile-first support with notifications</li>
+                            </ul>
+                        </div>
+                        <div class="pricing-footer">
+                            <a href="#" class="btn btn-primary">Start Free Trial</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Growth Plan -->
+                    <div class="pricing-card">
+                        <div class="pricing-header">
+                            <h3 class="heading-md pricing-title">Growth</h3>
+                            <div class="pricing-price">$599+<span class="pricing-period">/mo</span></div>
+                            <p class="body-sm">7-day free trial</p>
+                        </div>
+                        <div class="pricing-features">
+                            <ul>
+                                <li>Everything in Pro, plus:</li>
+                                <li>Multi-location support</li>
+                                <li>Priority onboarding & support</li>
+                                <li>AI training on documents & FAQs</li>
+                                <li>Bulk SMS campaigns</li>
+                                <li>Advanced analytics dashboard</li>
+                                <li>SLA response time guarantee</li>
+                            </ul>
+                        </div>
+                        <div class="pricing-footer">
+                            <a href="#" class="btn btn-primary">Start Free Trial</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trusted By Section -->
+        <section class="trusted-by">
+            <div class="container">
+                <h2 class="heading-lg section-title">Trusted By Businesses Like</h2>
+                <div class="logos-container">
+                    <div class="logo-placeholder">Logo</div>
+                    <div class="logo-placeholder">Logo</div>
+                    <div class="logo-placeholder">Logo</div>
+                    <div class="logo-placeholder">Logo</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta" id="contact">
+            <div class="container">
+                <h2 class="heading-lg cta-title">Ready to never miss a customer again?</h2>
+                <div class="cta-buttons">
+                    <a href="#" class="btn btn-primary">Book a Demo</a>
+                    <a href="#" class="btn btn-secondary">Try It Now</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container footer-container">
+            <div class="footer-logo">SmartText AI</div>
+            <div class="footer-links">
+                <a href="#" class="footer-link">Contact</a>
+                <a href="#" class="footer-link">Privacy</a>
+                <a href="#" class="footer-link">Terms</a>
+            </div>
+            <div class="footer-contact">
+                <a href="mailto:info@getsmarttext.com">info@getsmarttext.com</a>
+            </div>
+            <div class="footer-copyright">
+                © 2025 SmartText AI. All rights reserved.
+            </div>
         </div>
-    </div>
-    <div class="footer">
-        <p>© 2025 SmartText AI. All rights reserved.</p>
-    </div>
-</body>
-</html>
+    </footer>
+
+    <!-- JavaScript for mobile navigation -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const navToggle = document.querySelector('.nav-toggle');
+            const navMenu = document.querySelector('.nav-menu');
+            const hamburger = document.querySelector('.hamburger');
+            
+            navToggle.addEventListener('click', function() {
+                navMenu.classList.toggle('active');
+                hamburger.classList.toggle('open');
+            });
+
+            // Close menu when clicking on a nav link
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    navMenu.classList.remove('active');
+                    hamburger.classList.remove('open');
+                });
+            });
+        });
+    </script>

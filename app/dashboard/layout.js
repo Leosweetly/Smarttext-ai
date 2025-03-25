@@ -1,27 +1,52 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth/context";
+import { useAuth } from "@/lib/auth-context";
+import { OnboardingProvider } from "@/lib/onboarding/index";
+import OnboardingBanner from "@/app/components/OnboardingBanner";
 import styles from "./dashboard.module.css";
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
-  const { user, isLoading, isAuthenticated, logout } = useAuth();
+  const { user, isLoading, isAuthenticated, error, logout } = useAuth();
+  const [authChecked, setAuthChecked] = useState(false);
   
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/login?error=unauthorized');
+    if (!isLoading) {
+      console.log("[Auth] Authentication status:", { 
+        isAuthenticated, 
+        userId: user?.sub,
+        email: user?.email 
+      });
+      
+      setAuthChecked(true);
+      
+      if (!isAuthenticated) {
+        console.log("[Auth] User not authenticated, redirecting to login");
+        router.push('/login?error=unauthorized');
+      }
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, user, router]);
+  
+  // Handle authentication errors
+  useEffect(() => {
+    if (error) {
+      console.error("[Auth] Authentication error:", error);
+      router.push('/login?error=auth_error');
+    }
+  }, [error, router]);
   
   // Show loading state while checking authentication
-  if (isLoading) {
+  if (isLoading || !authChecked) {
     return (
       <div className={styles.loadingContainer}>
-        <div className={styles.loadingSpinner}>Loading...</div>
+        <div className={styles.loadingSpinner}>
+          <div className={styles.spinner}></div>
+          <p>Authenticating...</p>
+        </div>
       </div>
     );
   }
@@ -42,7 +67,8 @@ export default function DashboardLayout({ children }) {
   const trialStatus = 'Trial ends in 5 days'; // Placeholder
   
   return (
-    <div className={styles.dashboardContainer}>
+    <OnboardingProvider>
+      <div className={styles.dashboardContainer}>
       <aside className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
           <h1 className={styles.logo}>SmartText AI</h1>
@@ -50,6 +76,12 @@ export default function DashboardLayout({ children }) {
         <nav className={styles.navigation}>
           <Link href="/dashboard" className={styles.navItem}>
             Dashboard
+          </Link>
+          <Link href="/dashboard/conversations" className={styles.navItem}>
+            Conversations
+          </Link>
+          <Link href="/dashboard/missed-calls" className={styles.navItem}>
+            Missed Calls
           </Link>
           <Link href="/dashboard/settings" className={styles.navItem}>
             Business Settings
@@ -117,10 +149,14 @@ export default function DashboardLayout({ children }) {
             </div>
           </div>
         </header>
+        
+        {/* Onboarding Banner */}
+        <OnboardingBanner />
         <div className={styles.mainContent}>
           {children}
         </div>
       </main>
-    </div>
+      </div>
+    </OnboardingProvider>
   );
 }

@@ -1,170 +1,131 @@
 #!/usr/bin/env node
 
 /**
- * Test script for Twilio integration
+ * Twilio Integration Test Script
  * 
- * This script tests the end-to-end Twilio integration, including:
- * 1. Checking the status of a Twilio number
- * 2. Configuring the number if needed
- * 3. Simulating a missed call to test auto-texting
+ * This script tests the Twilio integration by:
+ * 1. Checking if the Twilio credentials are configured
+ * 2. Connecting to Twilio and fetching account information
+ * 3. Sending a test SMS message (if a phone number is provided)
  * 
- * Usage: node scripts/test-twilio-integration.js +18186518560
+ * Usage:
+ * node scripts/test-twilio-integration.js [phone_number]
+ * 
+ * Arguments:
+ * phone_number - Optional. The phone number to send a test SMS to. If not provided, the script will only check the connection.
  */
 
-const dotenv = require('dotenv');
-const path = require('path');
-const fs = require('fs');
-const { execSync } = require('child_process');
+require('dotenv').config({ path: '.env.local' });
+const twilio = require('twilio');
 
-// Load environment variables from .env.local
-dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+// Configuration
+const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
 
-// We need to use dynamic import since the Twilio module uses ES modules
-async function importModules() {
-  // Create a temporary file that re-exports the functions we need
-  const tempFile = path.resolve(__dirname, '../temp-twilio-integration.js');
-  
-  fs.writeFileSync(tempFile, `
-    import { getTwilioNumberStatus, configureTwilioNumber } from './lib/twilio/phone-manager.js';
-    
-    export async function checkStatus(phoneNumber) {
-      return await getTwilioNumberStatus(phoneNumber);
-    }
-    
-    export async function configure(phoneNumber) {
-      return await configureTwilioNumber(phoneNumber);
-    }
-  `);
-  
-  // Use dynamic import to load the ES module
-  const { checkStatus, configure } = await import('../temp-twilio-integration.js');
-  
-  // Clean up the temporary file
-  fs.unlinkSync(tempFile);
-  
-  return { checkStatus, configure };
-}
+// Get the phone number from command line arguments
+const testPhoneNumber = process.argv[2];
 
-// Simulate a missed call using the API endpoint
-async function simulateMissedCall(fromNumber, toNumber) {
-  console.log(`\n🔄 Simulating a missed call from ${fromNumber} to ${toNumber}...`);
+async function testTwilioIntegration() {
+  console.log('📱 Testing Twilio Integration');
+  console.log('----------------------------');
   
-  // Create form data for the request
-  const formData = new FormData();
-  formData.append('From', fromNumber);
-  formData.append('To', toNumber);
-  formData.append('CallStatus', 'no-answer');
+  // Check if Twilio credentials are configured
+  if (!TWILIO_ACCOUNT_SID) {
+    console.error('❌ Twilio Account SID is not configured');
+    console.log('\nPlease set the TWILIO_ACCOUNT_SID environment variable in your .env.local file:');
+    console.log('TWILIO_ACCOUNT_SID=your_twilio_account_sid');
+    return;
+  }
   
-  // Note: The response will be sent from TWILIO_SMARTTEXT_NUMBER if configured
-  console.log(`Note: Response will be sent from ${process.env.TWILIO_SMARTTEXT_NUMBER || toNumber}`);
+  if (!TWILIO_AUTH_TOKEN) {
+    console.error('❌ Twilio Auth Token is not configured');
+    console.log('\nPlease set the TWILIO_AUTH_TOKEN environment variable in your .env.local file:');
+    console.log('TWILIO_AUTH_TOKEN=your_twilio_auth_token');
+    return;
+  }
+  
+  if (!TWILIO_PHONE_NUMBER) {
+    console.error('❌ Twilio Phone Number is not configured');
+    console.log('\nPlease set the TWILIO_PHONE_NUMBER environment variable in your .env.local file:');
+    console.log('TWILIO_PHONE_NUMBER=your_twilio_phone_number');
+    return;
+  }
+  
+  console.log('✅ Twilio credentials are configured');
   
   try {
-    // Make a POST request to the missed call endpoint
-    const response = await fetch(`${process.env.API_BASE_URL || 'http://localhost:3000'}/api/missed-call`, {
-      method: 'POST',
-      body: formData
+    // Initialize Twilio client
+    const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+    
+    console.log('\n📊 Fetching account information...');
+    
+    // Fetch account information
+    const account = await client.api.accounts(TWILIO_ACCOUNT_SID).fetch();
+    
+    console.log('\n✅ Successfully connected to Twilio');
+    console.log('\n📋 Account Information:');
+    console.log(`  Account SID: ${account.sid}`);
+    console.log(`  Account Name: ${account.friendlyName}`);
+    console.log(`  Account Status: ${account.status}`);
+    console.log(`  Account Type: ${account.type}`);
+    
+    // Fetch phone number information
+    console.log('\n📊 Fetching phone number information...');
+    
+    const incomingPhoneNumbers = await client.incomingPhoneNumbers.list({
+      phoneNumber: TWILIO_PHONE_NUMBER,
     });
     
-    if (!response.ok) {
-      throw new Error(`API returned ${response.status}: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      console.log('✅ Missed call simulation successful!');
-      console.log(`📱 Auto-text message sent: "${data.message.substring(0, 100)}${data.message.length > 100 ? '...' : ''}"`);
-      return true;
+    if (incomingPhoneNumbers.length === 0) {
+      console.log(`\n⚠️ No phone number found matching ${TWILIO_PHONE_NUMBER}`);
+      console.log('\nPlease check your TWILIO_PHONE_NUMBER environment variable.');
     } else {
-      console.error('❌ Missed call simulation failed:', data.error);
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ Error simulating missed call:', error);
-    return false;
-  }
-}
-
-async function main() {
-  try {
-    // Check if required environment variables are set
-    if (!process.env.TWILIO_SID || !process.env.TWILIO_AUTH_TOKEN) {
-      console.error('❌ Error: TWILIO_SID and TWILIO_AUTH_TOKEN environment variables must be set');
-      console.error('Please add these to your .env.local file');
-      process.exit(1);
+      const phoneNumber = incomingPhoneNumbers[0];
+      console.log('\n✅ Successfully fetched phone number information');
+      console.log('\n📋 Phone Number Information:');
+      console.log(`  Phone Number: ${phoneNumber.phoneNumber}`);
+      console.log(`  Friendly Name: ${phoneNumber.friendlyName}`);
+      console.log(`  SMS URL: ${phoneNumber.smsUrl || 'Not configured'}`);
+      console.log(`  Voice URL: ${phoneNumber.voiceUrl || 'Not configured'}`);
     }
     
-    // Parse command line arguments
-    const phoneNumber = process.argv[2];
-    
-    if (!phoneNumber) {
-      console.error('❌ Error: Phone number is required');
-      console.log('Usage: node scripts/test-twilio-integration.js +18186518560');
-      process.exit(1);
-    }
-    
-    // Import the modules
-    const { checkStatus, configure } = await importModules();
-    
-    // Step 1: Check the status of the Twilio number
-    console.log(`\n🔍 Checking status for Twilio number: ${phoneNumber}`);
-    const status = await checkStatus(phoneNumber);
-    
-    if (!status.exists) {
-      console.error(`❌ Error: Phone number ${phoneNumber} not found in your Twilio account`);
-      console.log('Please make sure you have purchased this number in your Twilio account');
-      process.exit(1);
-    }
-    
-    console.log(`✅ Phone number ${phoneNumber} exists in your Twilio account`);
-    
-    // Step 2: Configure the number if needed
-    if (!status.isConfigured) {
-      console.log(`\n⚙️ Phone number is not properly configured. Configuring now...`);
+    // Send a test SMS message if a phone number is provided
+    if (testPhoneNumber) {
+      console.log(`\n📤 Sending a test SMS message to ${testPhoneNumber}...`);
       
-      try {
-        const result = await configure(phoneNumber);
-        console.log('✅ Configuration successful!');
-        console.log(`Voice URL: ${result.voiceUrl}`);
-        console.log(`Status Callback: ${result.statusCallback}`);
-      } catch (error) {
-        console.error('❌ Error configuring Twilio number:', error);
-        process.exit(1);
-      }
+      const message = await client.messages.create({
+        body: 'This is a test message from SmartText AI. If you received this, the Twilio integration is working correctly!',
+        from: TWILIO_PHONE_NUMBER,
+        to: testPhoneNumber,
+      });
+      
+      console.log('\n✅ Successfully sent a test SMS message');
+      console.log('\n📋 Message Information:');
+      console.log(`  Message SID: ${message.sid}`);
+      console.log(`  Message Status: ${message.status}`);
+      console.log(`  Message Direction: ${message.direction}`);
     } else {
-      console.log('✅ Phone number is already properly configured');
-      console.log(`Voice URL: ${status.voiceUrl}`);
-      console.log(`Status Callback: ${status.statusCallback}`);
+      console.log('\n⚠️ No phone number provided for testing SMS sending');
+      console.log('\nTo send a test SMS message, run the script with a phone number:');
+      console.log('node scripts/test-twilio-integration.js +1234567890');
     }
     
-    // Step 3: Simulate a missed call
-    console.log('\n📞 Testing missed call auto-texting...');
-    
-    // Generate a random phone number for testing
-    const testFromNumber = `+1${Math.floor(Math.random() * 9000000000) + 1000000000}`;
-    
-    const success = await simulateMissedCall(testFromNumber, phoneNumber);
-    
-    if (success) {
-      console.log('\n🎉 End-to-end Twilio integration test successful!');
-      console.log('Your Twilio number is properly configured for missed call auto-texting.');
-    } else {
-      console.error('\n❌ End-to-end Twilio integration test failed');
-      console.log('Please check your configuration and try again.');
-    }
+    console.log('\n🎉 Twilio integration is working correctly!');
     
   } catch (error) {
-    console.error('❌ Unhandled error:', error);
-    process.exit(1);
+    console.error('\n❌ Error testing Twilio integration:', error.message);
+    
+    if (error.code === 20003) {
+      console.log('\nThe Account SID or Auth Token you provided is invalid. Please check your Twilio credentials.');
+    } else if (error.code === 21211) {
+      console.log('\nThe phone number you provided is invalid. Please check the phone number format.');
+    } else if (error.code === 21608) {
+      console.log('\nThe phone number you provided is not a valid Twilio phone number. Please check your TWILIO_PHONE_NUMBER environment variable.');
+    } else {
+      console.log('\nPlease check your Twilio configuration and try again.');
+    }
   }
 }
 
-// Execute the main function
-main()
-  .then(() => {
-    process.exit(0);
-  })
-  .catch(error => {
-    console.error('❌ Unhandled error:', error);
-    process.exit(1);
-  });
+testTwilioIntegration();

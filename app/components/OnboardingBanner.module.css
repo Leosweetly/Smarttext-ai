@@ -1,0 +1,196 @@
+/* Onboarding Banner Styles */
+
+.banner {
+  position: relative;
+  width: 100%;
+  background-color: #f0f7ff;
+  border-bottom: 1px solid #cce0ff;
+  padding: 1rem 0;
+  z-index: 100;
+}
+
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.message {
+  text-align: center;
+}
+
+.message h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  color: #0066cc;
+}
+
+.message p {
+  margin: 0;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.progressBar {
+  width: 100%;
+  max-width: 400px;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: #0066cc;
+  transition: width 0.3s ease;
+}
+
+.progress span {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.steps {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin: 0.5rem 0;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 12px;
+  right: -1.5rem;
+  width: 1rem;
+  height: 2px;
+  background-color: #ccc;
+}
+
+.stepNumber {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #ccc;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.stepLabel {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.step.completed .stepNumber {
+  background-color: #4caf50;
+}
+
+.step.current .stepNumber {
+  background-color: #0066cc;
+}
+
+.step.current .stepLabel {
+  color: #0066cc;
+  font-weight: bold;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.continueButton {
+  padding: 0.5rem 1rem;
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.continueButton:hover {
+  background-color: #0055aa;
+}
+
+.dismissButton {
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  color: #666;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dismissButton:hover {
+  background-color: #f0f0f0;
+}
+
+/* Responsive styles */
+@media (min-width: 768px) {
+  .content {
+    padding: 0 2rem;
+  }
+  
+  .message h3 {
+    font-size: 1.5rem;
+  }
+  
+  .message p {
+    font-size: 1rem;
+  }
+  
+  .steps {
+    gap: 3rem;
+  }
+  
+  .step:not(:last-child)::after {
+    right: -2rem;
+    width: 1.5rem;
+  }
+  
+  .stepNumber {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+  
+  .stepLabel {
+    font-size: 0.9rem;
+  }
+  
+  .continueButton,
+  .dismissButton {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+  }
+}

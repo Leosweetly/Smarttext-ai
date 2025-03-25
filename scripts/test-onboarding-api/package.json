@@ -1,0 +1,22 @@
+{
+  "name": "onboarding-api-test-suite",
+  "version": "1.0.0",
+  "description": "Test suite for the onboarding API endpoints",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node index.mjs",
+    "test:mock": "node index.mjs --env=mock",
+    "test:prod": "node index.mjs --env=production",
+    "test:auth": "node index.mjs --tests=auth",
+    "test:get": "node index.mjs --tests=get",
+    "test:post": "node index.mjs --tests=post",
+    "test:reset": "node index.mjs --tests=reset",
+    "test:edge": "node index.mjs --tests=edge-cases",
+    "test:verbose": "node index.mjs --verbose"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^9.0.0",
+    "node-fetch": "^3.3.0"
+  }
+}

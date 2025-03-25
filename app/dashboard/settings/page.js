@@ -2,10 +2,14 @@
 
 import { useState } from "react";
 import styles from "./settings.module.css";
+import { useToast } from "@/app/components/Toast";
 import AirtableConnectionStatus from "../../components/AirtableConnectionStatus";
 import TwilioConnectionStatus from "../../components/TwilioConnectionStatus";
+import TwilioNumberSelector from "../../components/TwilioNumberSelector";
 
 export default function SettingsPage() {
+  const toast = useToast();
+  
   // Sample initial data - in a real app, this would come from the database
   const [businessInfo, setBusinessInfo] = useState({
     name: "Your Business Name",
@@ -310,24 +314,29 @@ export default function SettingsPage() {
             Configure your Twilio phone number for missed call auto-texting.
           </p>
           
-          <div className={styles.formGroup}>
-            <label htmlFor="phoneNumber">Business Phone Number</label>
-            <input
-              type="tel"
-              id="twilioPhoneNumber"
-              name="phoneNumber"
-              value={businessInfo.phoneNumber}
-              onChange={handleInfoChange}
-              disabled={!isEditing}
-              className={styles.input}
-              placeholder="Enter in E.164 format (e.g., +18186518560)"
-            />
-            <p className={styles.inputHelp}>
-              This should be your Twilio phone number in E.164 format.
+          <div className={styles.subsection}>
+            <h3 className={styles.subsectionTitle}>Select Twilio Number</h3>
+            <p className={styles.subsectionDescription}>
+              Choose a phone number from your Twilio account to use for SmartText AI.
             </p>
+            
+            <TwilioNumberSelector 
+              currentNumber={businessInfo.phoneNumber}
+              onNumberSelected={(number) => {
+                setBusinessInfo(prev => ({
+                  ...prev,
+                  phoneNumber: number
+                }));
+                toast.success("Phone number updated successfully");
+              }}
+              disabled={!isEditing}
+            />
           </div>
           
-          <TwilioConnectionStatus phoneNumber={businessInfo.phoneNumber} />
+          <div className={styles.subsection}>
+            <h3 className={styles.subsectionTitle}>Twilio Status</h3>
+            <TwilioConnectionStatus phoneNumber={businessInfo.phoneNumber} />
+          </div>
         </section>
       </form>
     </div>

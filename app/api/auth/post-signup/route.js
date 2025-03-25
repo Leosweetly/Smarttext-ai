@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createBusiness } from "@/lib/data/business";
 import { configureTwilioNumber } from "@/lib/twilio/phone-manager";
+import { saveOnboardingToAirtable } from "@/lib/onboarding/airtable";
 
 export async function POST(req) {
   try {
@@ -22,6 +23,25 @@ export async function POST(req) {
       address: "",
       businessType: "other",
       hours: {},
+      // Add onboarding data to customSettings
+      customSettings: {
+        onboarding: {
+          completed: false,
+          currentStep: "businessInfo",
+          lastUpdated: new Date().toISOString(),
+          steps: {
+            businessInfo: {
+              completed: false
+            },
+            phoneSetup: {
+              completed: false
+            },
+            preferences: {
+              completed: false
+            }
+          }
+        }
+      }
     });
     
     // Configure Twilio if phone number is provided
@@ -35,10 +55,49 @@ export async function POST(req) {
       }
     }
     
+    // Initialize onboarding data in Airtable
+    const onboardingData = {
+      userId: user.sub,
+      steps: {
+        businessInfo: {
+          completed: false,
+          data: {
+            name: user.name || "",
+            businessType: "other",
+            address: "",
+          }
+        },
+        phoneSetup: {
+          completed: false,
+          data: {
+            phoneNumber: phoneNumber || "",
+            configured: !!twilioConfig
+          }
+        },
+        preferences: {
+          completed: false,
+          data: {
+            notifications: true,
+            autoRespond: true,
+            theme: "light"
+          }
+        }
+      },
+      currentStep: "businessInfo",
+      completed: false,
+      lastUpdated: new Date().toISOString()
+    };
+    
+    // Save onboarding data to Airtable
+    await saveOnboardingToAirtable(business.id, onboardingData);
+    
     return NextResponse.json({
       success: true,
       business,
-      twilioConfig
+      twilioConfig,
+      onboarding: {
+        initialized: true
+      }
     });
   } catch (error) {
     console.error("Error in post-signup processing:", error);

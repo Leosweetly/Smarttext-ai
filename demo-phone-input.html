@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartText AI Demo</title>
+    <style>
+        /* Global styles */
+        :root {
+            --background: #ffffff;
+            --foreground: #202123;
+            --primary: #10A37F;
+            --primary-dark: #0d8c6d;
+            --primary-light: #e6f7f3;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            color: var(--foreground);
+            background: var(--background);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header styles */
+        .header {
+            text-align: center;
+            padding: 3rem 1rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border-radius: 0 0 8px 8px;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        /* Tab navigation */
+        .tabNav {
+            margin-bottom: 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            overflow-x: auto;
+        }
+
+        .tabButton {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .tabButton:hover {
+            color: var(--primary);
+        }
+
+        .activeTab {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* Form styles */
+        .form {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .formGroup {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 1rem;
+        }
+
+        .formGroup label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .select {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            background-color: #fff;
+        }
+
+        .textarea {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .button {
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 200px;
+            display: inline-block;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .button:hover:not(:disabled) {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .button:active:not(:disabled) {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Scenario info */
+        .scenarioInfo {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        .scenarioInfo h3 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+
+        /* Tier cards */
+        .tierCards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .tierCard {
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            border-top: 4px solid #ddd;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .tierCard:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .tierCard.basic {
+            border-top-color: var(--primary);
+        }
+
+        .tierCard.pro {
+            border-top-color: var(--primary-dark);
+        }
+
+        .tierCard.enterprise {
+            border-top-color: #0b7559;
+        }
+
+        .tierHeader {
+            padding: 1.5rem;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tierHeader h3 {
+            font-size: 1.2rem;
+            color: #333;
+            margin: 0;
+        }
+
+        .priceBadge {
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .basic .priceBadge {
+            background-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .pro .priceBadge {
+            background-color: #d1efe7;
+            color: var(--primary-dark);
+        }
+
+        .enterprise .priceBadge {
+            background-color: #bce7db;
+            color: #0b7559;
+        }
+
+        .responseContent {
+            padding: 1.5rem;
+            flex: 1;
+            border-bottom: 1px solid #eee;
+        }
+
+        .responseContent p {
+            margin: 0;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .form {
+                grid-template-columns: 1fr;
+            }
+            
+            .tierCards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Button container for better positioning */
+        .buttonContainer {
+            display: flex;
+            justify-content: center;
+            margin-top: 1rem;
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>SmartText AI Demo</h1>
+            <p class="subtitle">
+                Interactive demonstration of our AI-powered missed call response system
+            </p>
+        </header>
+
+        <nav class="tabNav">
+            <div class="tabs">
+                <button class="tabButton" onclick="switchTab('simulator')">Missed Call Simulator</button>
+                <button class="tabButton activeTab" onclick="switchTab('comparison')">Tier Comparison</button>
+                <button class="tabButton" onclick="switchTab('stats')">Demo Stats</button>
+            </div>
+        </nav>
+
+        <main id="content">
+            <div id="tierComparison">
+                <h2>Subscription Tier Comparison</h2>
+                <p>Compare AI responses across different subscription tiers</p>
+
+                <form id="comparisonForm" class="form">
+                    <div class="formGroup">
+                        <label for="businessType">Business Type</label>
+                        <select id="businessType" class="select">
+                            <option value="restaurant">Restaurant</option>
+                            <option value="autoShop">Auto Shop</option>
+                            <option value="salon">Salon</option>
+                        </select>
+                    </div>
+
+                    <div class="formGroup">
+                        <label for="scenario">Customer Scenario</label>
+                        <select id="scenario" class="select" onchange="toggleCustomMessage()">
+                            <option value="availability">Availability Inquiry</option>
+                            <option value="services">Services Question</option>
+                            <option value="hours">Hours Question</option>
+                            <option value="custom">Custom Inquiry</option>
+                        </select>
+                    </div>
+
+                    <div class="formGroup" id="customMessageGroup" style="display: none;">
+                        <label for="customMessage">Custom Message</label>
+                        <textarea id="customMessage" class="textarea" placeholder="Enter a custom message from the customer..." rows="3"></textarea>
+                    </div>
+
+                    <div class="buttonContainer">
+                        <button type="button" id="compareButton" class="button" onclick="compareTiers()">Compare Tiers</button>
+                    </div>
+                </form>
+
+                <div id="comparisonResults">
+                    <div class="scenarioInfo">
+                        <h3>Scenario</h3>
+                        <p class="scenarioType">
+                            <strong>Business Type:</strong> <span id="resultBusinessType">Restaurant</span>
+                        </p>
+                        <p class="scenarioMessage">
+                            <strong>Customer Message:</strong> "<span id="resultMessage">Do you have availability Tuesday at 4pm?</span>"
+                        </p>
+                    </div>
+
+                    <div class="tierCards">
+                        <div class="tierCard basic">
+                            <div class="tierHeader">
+                                <h3>Basic</h3>
+                                <div class="priceBadge">$199/mo</div>
+                            </div>
+                            <div class="responseContent">
+                                <p id="basicResponse">Hey thanks for calling Delicious Eats. We're currently unavailable. Our hours are Monday-Friday: 9 AM - 5 PM, Saturday: 10 AM - 3 PM. Please call back during our business hours or leave a message and we'll get back to you as soon as possible.</p>
+                            </div>
+                        </div>
+
+                        <div class="tierCard pro">
+                            <div class="tierHeader">
+                                <h3>Pro</h3>
+                                <div class="priceBadge">$349/mo</div>
+                            </div>
+                            <div class="responseContent">
+                                <p id="proResponse">Thanks for calling Delicious Eats! Sorry we missed you. We're open Monday-Friday: 9 AM - 5 PM, Saturday: 10 AM - 3 PM. Want to make a reservation or order online? Visit: our website. We'll call you back shortly!</p>
+                            </div>
+                        </div>
+
+                        <div class="tierCard enterprise">
+                            <div class="tierHeader">
+                                <h3>Enterprise</h3>
+                                <div class="priceBadge">$499+/mo</div>
+                            </div>
+                            <div class="responseContent">
+                                <p id="enterpriseResponse">Hi there! Thanks for calling Delicious Eats. We're currently helping other customers. We're open Monday-Friday: 9 AM - 5 PM, Saturday: 10 AM - 3 PM. Would you like to make a reservation or order from our seasonal menu? Visit: our website or reply to this message. We'll call you back within 15 minutes!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Log to console to verify script is running
+        console.log("Script loaded");
+        
+        // Show comparison results by default for demo purposes
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM loaded");
+            // Results are already visible by default in the HTML
+            
+            // Initialize with restaurant responses
+            updateResponses('restaurant');
+        });
+        
+        // Toggle custom message textarea based on scenario selection
+        function toggleCustomMessage() {
+            console.log("Toggle custom message called");
+            const scenarioSelect = document.getElementById('scenario');
+            const customMessageGroup = document.getElementById('customMessageGroup');
+            
+            if (scenarioSelect.value === 'custom') {
+                customMessageGroup.style.display = 'flex';
+            } else {
+                customMessageGroup.style.display = 'none';
+            }
+        }
+
+        // Switch between tabs
+        function switchTab(tabId) {
+            console.log(`Switching to tab: ${tabId}`);
+            // Update active tab styling
+            const tabs = document.querySelectorAll('.tabButton');
+            tabs.forEach(tab => tab.classList.remove('activeTab'));
+            
+            // Find the clicked tab and add active class
+            const clickedTab = Array.from(tabs).find(tab => tab.textContent.toLowerCase().includes(tabId));
+            if (clickedTab) {
+                clickedTab.classList.add('activeTab');
+                console.log(`Set active tab: ${clickedTab.textContent}`);
+            } else {
+                console.log("Could not find matching tab");
+            }
+            
+            // In a real app, we would show/hide different components here
+            // For this demo, we'll just show the tier comparison
+        }
+
+        // Compare tiers
+        function compareTiers() {
+            console.log("Compare tiers called");
+            const businessType = document.getElementById('businessType').value;
+            const scenario = document.getElementById('scenario').value;
+            const customMessage = document.getElementById('customMessage').value;
+            
+            console.log(`Business type: ${businessType}, Scenario: ${scenario}`);
+            
+            // Update the business type in the results
+            document.getElementById('resultBusinessType').textContent = 
+                businessType === 'restaurant' ? 'Restaurant' :
+                businessType === 'autoShop' ? 'Auto Shop' : 'Salon';
+            
+            // Update the message in the results
+            let message = '';
+            switch (scenario) {
+                case 'availability':
+                    message = 'Do you have availability Tuesday at 4pm?';
+                    break;
+                case 'services':
+                    message = 'How much would it cost for a basic service?';
+                    break;
+                case 'hours':
+                    message = 'What are your hours today?';
+                    break;
+                case 'custom':
+                    message = customMessage || 'Custom inquiry';
+                    break;
+            }
+            document.getElementById('resultMessage').textContent = message;
+            console.log(`Set message: ${message}`);
+            
+            // Show the results
+            document.getElementById('comparisonResults').style.display = 'block';
+            
+            // In a real app, we would make an API call to get the responses
+            // For this demo, we'll just use static responses
+            updateResponses(businessType);
+        }
+        
+        // Update responses based on business type
+        function updateResponses(businessType) {
+            console.log(`Updating responses for business type: ${businessType}`);
+            if (businessType === 'restaurant') {
+                document.getElementById('basicResponse').textContent = 
+                    "Hey thanks for calling Delicious Eats. We're currently unavailable. Our hours are Monday-Friday: 9 AM - 5 PM, Saturday: 10 AM - 3 PM. Please call back during our business hours or leave a message and we'll get back to you as soon as possible.";
+                
+                document.getElementById('proResponse').textContent = 
+                    "Thanks for calling Delicious Eats! Sorry we missed you. We're open Monday-Friday: 9 AM - 5 PM, Saturday: 10 AM - 3 PM. Want to make a reservation or order online? Visit: our website. We'll call you back shortly!";
+                
+                document.getElementById('enterpriseResponse').textContent = 
+                    "Hi there! Thanks for calling Delicious Eats. We're currently helping other customers. We're open Monday-Friday: 9 AM - 5 PM, Saturday: 10 AM - 3 PM. Would you like to make a reservation or order from our seasonal menu? Visit: our website or reply to this message. We'll call you back within 15 minutes!";
+            } else if (businessType === 'autoShop') {
+                document.getElementById('basicResponse').textContent = 
+                    "Hey thanks for calling Quick Fix Auto. We're currently unavailable. Our hours are Monday-Friday: 8 AM - 6 PM, Saturday: 9 AM - 3 PM. Please call back during our business hours or leave a message and we'll get back to you as soon as possible.";
+                
+                document.getElementById('proResponse').textContent = 
+                    "Thanks for calling Quick Fix Auto! Sorry we missed you. We're open Monday-Friday: 8 AM - 6 PM, Saturday: 9 AM - 3 PM. Need a quote? Visit: our website. We'll call you back shortly!";
+                
+                document.getElementById('enterpriseResponse').textContent = 
+                    "Hi there! Thanks for calling Quick Fix Auto. We're currently helping other customers. We're open Monday-Friday: 8 AM - 6 PM, Saturday: 9 AM - 3 PM. Need a quote for repairs or maintenance? Visit: our website or reply to this message. We'll call you back within 15 minutes!";
+            } else {
+                document.getElementById('basicResponse').textContent = 
+                    "Hey thanks for calling Glamour Styles. We're currently unavailable. Our hours are Tuesday-Saturday: 9 AM - 7 PM. Please call back during our business hours or leave a message and we'll get back to you as soon as possible.";
+                
+                document.getElementById('proResponse').textContent = 
+                    "Thanks for calling Glamour Styles! Sorry we missed you. We're open Tuesday-Saturday: 9 AM - 7 PM. Book an appointment online at our website. We'll call you back shortly!";
+                
+                document.getElementById('enterpriseResponse').textContent = 
+                    "Hi there! Thanks for calling Glamour Styles. We're currently helping other customers. We're open Tuesday-Saturday: 9 AM - 7 PM. Would you like to book an appointment for our premium services? Visit our website or reply to this message. We'll call you back within 15 minutes!";
+            }
+            console.log("Responses updated");
+        }
+    </script>
+</body>
+</html>

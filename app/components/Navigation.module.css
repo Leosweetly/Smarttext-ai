@@ -1,0 +1,182 @@
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  position: relative;
+  z-index: 101;
+}
+
+.logoLink {
+  text-decoration: none;
+  display: block;
+  position: relative;
+  z-index: 101;
+}
+
+.logoText {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0070f3;
+  text-decoration: none;
+  position: relative;
+  z-index: 101;
+}
+
+.links {
+  display: flex;
+  gap: 2rem;
+  position: relative;
+  z-index: 101;
+}
+
+.links a {
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  position: relative;
+  z-index: 101;
+  cursor: pointer;
+  padding: 0.5rem 0;
+}
+
+.links a:hover {
+  color: #0070f3;
+}
+
+.links a.active {
+  color: #0070f3;
+  font-weight: 600;
+}
+
+.auth {
+  display: flex;
+  gap: 1rem;
+  position: relative;
+  z-index: 101;
+}
+
+.loadingAuth {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.loginButton {
+  color: #0070f3;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: inline-block;
+  position: relative;
+  z-index: 101;
+}
+
+.loginButton:hover {
+  background-color: rgba(0, 112, 243, 0.1);
+}
+
+.signupButton {
+  background-color: #0070f3;
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  border: none;
+  cursor: pointer;
+  display: inline-block;
+  position: relative;
+  z-index: 101;
+}
+
+.signupButton:hover {
+  background-color: #005cc5;
+}
+
+/* Footer styles */
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  background-color: #f5f5f5;
+  border-top: 1px solid #eaeaea;
+  margin-top: auto;
+  width: 100%;
+}
+
+.footerLinks {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1rem;
+}
+
+.footerLinks a {
+  color: #666;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+  position: relative;
+  z-index: 101;
+}
+
+.footerLinks a:hover {
+  color: #0070f3;
+}
+
+.footerLinks a.active {
+  color: #0070f3;
+  font-weight: 500;
+}
+
+.copyright {
+  color: #999;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+  .navigation {
+    flex-direction: column;
+    padding: 1rem;
+  }
+  
+  .logo {
+    margin-bottom: 1rem;
+  }
+  
+  .links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .auth {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .footerLinks {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+  }
+}

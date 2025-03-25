@@ -1,0 +1,217 @@
+.missedCallsPage {
+  width: 100%;
+}
+
+.pageTitle {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem 0;
+  font-family: 'Roboto Bold', sans-serif;
+}
+
+/* Loading Skeleton */
+.loadingSkeleton {
+  width: 100%;
+  height: 50px;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.skeletonPulse {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    rgba(0, 0, 0, 0.06) 25%, 
+    rgba(0, 0, 0, 0.12) 37%, 
+    rgba(0, 0, 0, 0.06) 63%
+  );
+  background-size: 400% 100%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+.loadingContainer {
+  padding: 1rem;
+  width: 100%;
+}
+
+.errorContainer {
+  padding: 1rem;
+  color: #e53e3e;
+  text-align: center;
+}
+
+.emptyContainer {
+  padding: 1rem;
+  color: #718096;
+  text-align: center;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.filters {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.filterButton {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--gray-alpha-200);
+  background-color: var(--background);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filterButton:hover {
+  background-color: var(--gray-alpha-100);
+}
+
+.filterButton.active {
+  background-color: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.daysFilter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.daysFilter label {
+  font-size: 0.9rem;
+}
+
+.daysSelect {
+  padding: 0.5rem;
+  border: 1px solid var(--gray-alpha-200);
+  border-radius: 4px;
+  background-color: var(--background);
+  font-size: 0.9rem;
+}
+
+/* Missed Calls Table */
+.missedCallsContainer {
+  margin-bottom: 2rem;
+  border: 1px solid var(--gray-alpha-200);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.missedCallsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.missedCallsTable th,
+.missedCallsTable td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--gray-alpha-200);
+}
+
+.missedCallsTable th {
+  background-color: var(--gray-alpha-100);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.missedCallsTable tr:last-child td {
+  border-bottom: none;
+}
+
+.missedCallsTable tr:hover td {
+  background-color: var(--gray-alpha-50);
+}
+
+.textSent {
+  color: #38a169;
+  font-weight: 600;
+}
+
+.textNotSent {
+  color: #e53e3e;
+  font-weight: 600;
+}
+
+/* Stats */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.statCard {
+  background-color: var(--gray-alpha-100);
+  border: 1px solid var(--gray-alpha-200);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.statCard h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  opacity: 0.8;
+}
+
+.statValue {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--primary);
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .missedCallsTable {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .filters {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .filterButton {
+    width: 100%;
+  }
+  
+  .daysFilter {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .stats {
+    grid-template-columns: 1fr;
+  }
+}

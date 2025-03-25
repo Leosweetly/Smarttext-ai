@@ -8,8 +8,27 @@
 }
 
 .loadingSpinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
   font-size: 1.2rem;
   color: #0070f3;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 112, 243, 0.2);
+  border-radius: 50%;
+  border-top-color: #0070f3;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .dashboardContainer {
