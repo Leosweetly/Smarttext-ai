@@ -1,4 +1,4 @@
-import { handleLogin } from '@auth0/nextjs-auth0';
+import { handleLogin } from '../auth-utils';
 import { NextResponse } from 'next/server';
 
 export async function GET(req) {

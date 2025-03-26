@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import twilio from "twilio";
-import { getSession } from "@auth0/nextjs-auth0";
+import { getSession } from "../auth-utils";
 
 /**
  * GET handler for listing all Twilio phone numbers

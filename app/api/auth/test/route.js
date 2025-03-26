@@ -1,6 +1,6 @@
 'use server';
 
-import { getSession } from '@auth0/nextjs-auth0';
+import { getSession } from '../auth-utils';
 import { NextResponse } from 'next/server';
 
 /**

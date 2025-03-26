@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import twilio from "twilio";
-import { getBusinessByPhoneNumber, getLocationByPhoneNumber } from "@/lib/data";
+import { getBusinessByPhoneNumber, getLocationByPhoneNumber } from "../../../../lib/data/index.js";
 
 /**
  * Twilio Voice Webhook Handler

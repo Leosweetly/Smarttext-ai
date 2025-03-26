@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { withApiAuthRequired } from "@/lib/auth";
-import { createPortalSession } from "@/lib/payment";
+import { withApiAuthRequired } from "../../../../lib/auth";
+import { createPortalSession } from "../../../../lib/payment";
 
 // This endpoint is protected and only accessible to authenticated users
 export const POST = withApiAuthRequired(async function handler(req) {

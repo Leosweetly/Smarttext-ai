@@ -1,8 +1,8 @@
 'use server';
 
-import { getTable } from '@/lib/data/airtable-client';
+import { getTable } from '../../../lib/data/airtable-client';
 import { NextResponse } from 'next/server';
-import { getSession } from '@auth0/nextjs-auth0';
+import { getSession } from './auth-utils';
 
 /**
  * GET handler for fetching conversations

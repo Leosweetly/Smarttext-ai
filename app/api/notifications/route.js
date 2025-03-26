@@ -14,8 +14,7 @@ import {
   NOTIFICATION_TYPE,
   NOTIFICATION_PRIORITY
 } from '../../../lib/inbox/notifications';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { getSession } from './auth-utils';
 
 /**
  * GET /api/notifications
@@ -30,7 +29,7 @@ import { authOptions } from '../auth/[...nextauth]/route';
 export async function GET(request) {
   try {
     // Get the session
-    const session = await getServerSession(authOptions);
+    const session = await getSession(request, new Response());
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -68,98 +67,5 @@ export async function GET(request) {
   }
 }
 
-/**
- * POST /api/notifications/read
- * Mark all notifications as read
- */
-export async function POST_READ(request) {
-  try {
-    // Get the session
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Get the business ID from the session
-    const businessId = session.user.businessId;
-    if (!businessId) {
-      return NextResponse.json({ error: 'Business ID not found in session' }, { status: 400 });
-    }
-    
-    // Mark all notifications as read
-    const markedCount = await markAllNotificationsAsRead(session.user.id, businessId);
-    
-    return NextResponse.json({ markedCount });
-  } catch (error) {
-    console.error('Error in POST /api/notifications/read:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
-
-/**
- * GET /api/notifications/unread
- * Get unread notification count
- */
-export async function GET_UNREAD(request) {
-  try {
-    // Get the session
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Get the business ID from the session
-    const businessId = session.user.businessId;
-    if (!businessId) {
-      return NextResponse.json({ error: 'Business ID not found in session' }, { status: 400 });
-    }
-    
-    // Get unread notification count
-    const unreadCount = await getUnreadNotificationCount(session.user.id, businessId);
-    
-    return NextResponse.json({ unreadCount });
-  } catch (error) {
-    console.error('Error in GET /api/notifications/unread:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
-
-/**
- * POST /api/notifications/cleanup
- * Delete old notifications
- * 
- * Request body:
- * - days: Number of days to keep notifications (default: 30)
- */
-export async function POST_CLEANUP(request) {
-  try {
-    // Get the session
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Get the business ID from the session
-    const businessId = session.user.businessId;
-    if (!businessId) {
-      return NextResponse.json({ error: 'Business ID not found in session' }, { status: 400 });
-    }
-    
-    // Check if the user is an admin
-    if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-    
-    // Get request body
-    const body = await request.json();
-    const days = body.days || 30;
-    
-    // Delete old notifications
-    const deletedCount = await deleteOldNotifications(businessId, days);
-    
-    return NextResponse.json({ deletedCount });
-  } catch (error) {
-    console.error('Error in POST /api/notifications/cleanup:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
+// Note: POST_READ, GET_UNREAD, and POST_CLEANUP functions have been removed as they're not valid Next.js route exports
+// These functionalities should be implemented in separate route files like read/route.js, unread/route.js, and cleanup/route.js

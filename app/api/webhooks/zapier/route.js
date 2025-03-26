@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { logError, handleApiError } from "@/lib/utils";
+import { logError, handleApiError } from "../../../../lib/utils/index.js";
 
 /**
  * POST handler for Zapier webhook triggers

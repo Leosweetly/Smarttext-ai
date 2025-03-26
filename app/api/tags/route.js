@@ -15,8 +15,7 @@ import {
   getRootTags,
   searchTags
 } from '../../../lib/tags';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { validateAuth } from '../../../lib/auth/api-auth';
 
 /**
  * GET /api/tags
@@ -29,14 +28,17 @@ import { authOptions } from '../auth/[...nextauth]/route';
  */
 export async function GET(request) {
   try {
-    // Get the session
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Validate authentication
+    const authResult = await validateAuth(request);
+    if (!authResult.success) {
+      return NextResponse.json(
+        { success: false, error: authResult.error },
+        { status: authResult.status }
+      );
     }
     
-    // Get the business ID from the session
-    const businessId = session.user.businessId;
+    // Get the business ID from the auth result
+    const businessId = authResult.businessId;
     if (!businessId) {
       return NextResponse.json({ error: 'Business ID not found in session' }, { status: 400 });
     }
@@ -82,14 +84,17 @@ export async function GET(request) {
  */
 export async function POST(request) {
   try {
-    // Get the session
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Validate authentication
+    const authResult = await validateAuth(request);
+    if (!authResult.success) {
+      return NextResponse.json(
+        { success: false, error: authResult.error },
+        { status: authResult.status }
+      );
     }
     
-    // Get the business ID from the session
-    const businessId = session.user.businessId;
+    // Get the business ID from the auth result
+    const businessId = authResult.businessId;
     if (!businessId) {
       return NextResponse.json({ error: 'Business ID not found in session' }, { status: 400 });
     }
@@ -121,37 +126,8 @@ export async function POST(request) {
   }
 }
 
-/**
- * GET /api/tags/:id
- * Get a tag by ID
- */
-export async function GET_BY_ID(request, { params }) {
-  try {
-    // Get the session
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Get the tag
-    const tag = await getTagById(params.id);
-    
-    // Check if the tag exists
-    if (!tag) {
-      return NextResponse.json({ error: 'Tag not found' }, { status: 404 });
-    }
-    
-    // Check if the tag belongs to the user's business
-    if (tag.businessId !== session.user.businessId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-    
-    return NextResponse.json({ tag });
-  } catch (error) {
-    console.error(`Error in GET /api/tags/${params.id}:`, error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
+// Note: GET_BY_ID function has been removed as it's not a valid Next.js route export
+// This functionality should be implemented in a dynamic route file like [id]/route.js
 
 /**
  * PUT /api/tags/:id
@@ -164,11 +140,17 @@ export async function GET_BY_ID(request, { params }) {
  */
 export async function PUT(request, { params }) {
   try {
-    // Get the session
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Validate authentication
+    const authResult = await validateAuth(request);
+    if (!authResult.success) {
+      return NextResponse.json(
+        { success: false, error: authResult.error },
+        { status: authResult.status }
+      );
     }
+    
+    // Get the business ID from the auth result
+    const businessId = authResult.businessId;
     
     // Get the tag
     const tag = await getTagById(params.id);
@@ -179,7 +161,7 @@ export async function PUT(request, { params }) {
     }
     
     // Check if the tag belongs to the user's business
-    if (tag.businessId !== session.user.businessId) {
+    if (tag.businessId !== businessId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
     
@@ -206,11 +188,17 @@ export async function PUT(request, { params }) {
  */
 export async function DELETE(request, { params }) {
   try {
-    // Get the session
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Validate authentication
+    const authResult = await validateAuth(request);
+    if (!authResult.success) {
+      return NextResponse.json(
+        { success: false, error: authResult.error },
+        { status: authResult.status }
+      );
     }
+    
+    // Get the business ID from the auth result
+    const businessId = authResult.businessId;
     
     // Get the tag
     const tag = await getTagById(params.id);
@@ -221,7 +209,7 @@ export async function DELETE(request, { params }) {
     }
     
     // Check if the tag belongs to the user's business
-    if (tag.businessId !== session.user.businessId) {
+    if (tag.businessId !== businessId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
     

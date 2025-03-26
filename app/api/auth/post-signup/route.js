@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { createBusiness } from "@/lib/data/business";
-import { configureTwilioNumber } from "@/lib/twilio/phone-manager";
-import { saveOnboardingToAirtable } from "@/lib/onboarding/airtable";
+import { createBusiness } from "../../../../lib/data/business";
+import { configureTwilioNumber } from "../../../../lib/twilio/phone-manager";
+import { saveOnboardingToAirtable } from "../../../../lib/onboarding/airtable";
 
 export async function POST(req) {
   try {

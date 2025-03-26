@@ -7,8 +7,8 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getOnboardingData, updateOnboardingData } from '@/lib/onboarding/airtable';
-import { validateAuth } from '@/lib/auth/api-auth';
+import { getOnboardingData, updateOnboardingData } from '../../../lib/onboarding/airtable';
+import { validateAuth } from '../../../lib/auth/api-auth';
 
 /**
  * GET /api/onboarding

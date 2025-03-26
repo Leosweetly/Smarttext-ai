@@ -16,8 +16,7 @@ import {
   archiveNote,
   unarchiveNote
 } from '../../../lib/notes';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { getSession } from './auth-utils';
 
 /**
  * GET /api/notes
@@ -33,7 +32,7 @@ import { authOptions } from '../auth/[...nextauth]/route';
 export async function GET(request) {
   try {
     // Get the session
-    const session = await getServerSession(authOptions);
+    const session = await getSession(request, new Response());
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -97,7 +96,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     // Get the session
-    const session = await getServerSession(authOptions);
+    const session = await getSession(request, new Response());
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -140,37 +139,8 @@ export async function POST(request) {
   }
 }
 
-/**
- * GET /api/notes/:id
- * Get a note by ID
- */
-export async function GET_BY_ID(request, { params }) {
-  try {
-    // Get the session
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Get the note
-    const note = await getNoteById(params.id);
-    
-    // Check if the note exists
-    if (!note) {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
-    }
-    
-    // Check if the note belongs to the user's business
-    if (note.businessId !== session.user.businessId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-    
-    return NextResponse.json({ note });
-  } catch (error) {
-    console.error(`Error in GET /api/notes/${params.id}:`, error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
+// Note: GET_BY_ID function has been removed as it's not a valid Next.js route export
+// This functionality should be implemented in a dynamic route file like [id]/route.js
 
 /**
  * PUT /api/notes/:id
@@ -182,7 +152,7 @@ export async function GET_BY_ID(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     // Get the session
-    const session = await getServerSession(authOptions);
+    const session = await getSession(request, new Response());
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -227,7 +197,7 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     // Get the session
-    const session = await getServerSession(authOptions);
+    const session = await getSession(request, new Response());
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -255,72 +225,5 @@ export async function DELETE(request, { params }) {
   }
 }
 
-/**
- * POST /api/notes/:id/archive
- * Archive a note
- */
-export async function POST_ARCHIVE(request, { params }) {
-  try {
-    // Get the session
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Get the note
-    const note = await getNoteById(params.id);
-    
-    // Check if the note exists
-    if (!note) {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
-    }
-    
-    // Check if the note belongs to the user's business
-    if (note.businessId !== session.user.businessId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-    
-    // Archive the note
-    const archivedNote = await archiveNote(params.id);
-    
-    return NextResponse.json({ note: archivedNote });
-  } catch (error) {
-    console.error(`Error in POST /api/notes/${params.id}/archive:`, error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
-
-/**
- * POST /api/notes/:id/unarchive
- * Unarchive a note
- */
-export async function POST_UNARCHIVE(request, { params }) {
-  try {
-    // Get the session
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Get the note
-    const note = await getNoteById(params.id);
-    
-    // Check if the note exists
-    if (!note) {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
-    }
-    
-    // Check if the note belongs to the user's business
-    if (note.businessId !== session.user.businessId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-    
-    // Unarchive the note
-    const unarchivedNote = await unarchiveNote(params.id);
-    
-    return NextResponse.json({ note: unarchivedNote });
-  } catch (error) {
-    console.error(`Error in POST /api/notes/${params.id}/unarchive:`, error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
+// Note: POST_ARCHIVE and POST_UNARCHIVE functions have been removed as they're not valid Next.js route exports
+// These functionalities should be implemented in dynamic route files like [id]/archive/route.js and [id]/unarchive/route.js

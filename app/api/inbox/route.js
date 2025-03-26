@@ -21,8 +21,7 @@ import {
   CONVERSATION_STATUS,
   CONVERSATION_PRIORITY
 } from '../../../lib/inbox';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { getSession } from './auth-utils';
 
 /**
  * GET /api/inbox
@@ -41,7 +40,7 @@ import { authOptions } from '../auth/[...nextauth]/route';
 export async function GET(request) {
   try {
     // Get the session
-    const session = await getServerSession(authOptions);
+    const session = await getSession(request, new Response());
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -118,7 +117,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     // Get the session
-    const session = await getServerSession(authOptions);
+    const session = await getSession(request, new Response());
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -160,30 +159,5 @@ export async function POST(request) {
   }
 }
 
-/**
- * GET /api/inbox/stats
- * Get conversation statistics for the current business
- */
-export async function GET_STATS(request) {
-  try {
-    // Get the session
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Get the business ID from the session
-    const businessId = session.user.businessId;
-    if (!businessId) {
-      return NextResponse.json({ error: 'Business ID not found in session' }, { status: 400 });
-    }
-    
-    // Get conversation statistics
-    const stats = await getConversationStats(businessId);
-    
-    return NextResponse.json({ stats });
-  } catch (error) {
-    console.error('Error in GET /api/inbox/stats:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
+// Note: The GET_STATS function has been removed as it's not a valid Next.js route export
+// Stats are now included in the main GET response

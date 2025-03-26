@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import twilio from "twilio";
-import { getBusinessByPhoneNumber, getLocationByPhoneNumber, getBusinessWithLocations } from "@/lib/data";
-import { generateMissedCallResponse, generateLocationMissedCallResponse } from "@/lib/ai";
-import { trackLeadSource } from "@/lib/marketing";
+import { getBusinessByPhoneNumber, getLocationByPhoneNumber, getBusinessWithLocations } from "../../../lib/data";
+import { generateMissedCallResponse, generateLocationMissedCallResponse } from "../../../lib/ai";
+import { trackLeadSource } from "../../../lib/marketing";
 
 export async function POST(req) {
     try {

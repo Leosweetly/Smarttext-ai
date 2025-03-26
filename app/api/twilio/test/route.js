@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getTwilioNumberStatus } from "@/lib/twilio/phone-manager";
+import { getTwilioNumberStatus } from "../../../../lib/twilio/phone-manager.js";
 
 export async function POST(req) {
   try {
