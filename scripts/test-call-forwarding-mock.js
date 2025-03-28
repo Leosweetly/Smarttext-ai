@@ -45,7 +45,7 @@ function generateForwardingTwiML(forwardingNumber, businessName) {
   const dial = response.dial({
     timeout: 20, // Seconds to wait for an answer
     callerId: process.env.TWILIO_SMARTTEXT_NUMBER || null, // Use SmartText number as caller ID if available
-    action: `${process.env.API_BASE_URL || 'https://smarttext-webhook-kyle-davis-projects-30fc1531.vercel.app'}/api/missed-call`,
+    action: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000'}/api/missed-call`,
     method: 'POST',
   });
   dial.number(forwardingNumber);

@@ -34,7 +34,7 @@ async function simulateMissedCall(fromNumber, toNumber) {
     formData.append('CallStatus', 'no-answer'); // Simulate a no-answer call status
     
     // Get the API base URL from environment or use default
-    const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
     const missedCallUrl = `${apiBaseUrl}/api/missed-call`;
     
     console.log(`Sending request to: ${missedCallUrl}`);

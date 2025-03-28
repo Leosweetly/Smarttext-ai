@@ -99,7 +99,7 @@ async function main() {
         const options = {
           voiceUrl: process.env.DEFAULT_TWIML_BIN_URL || 
             'https://handler.twilio.com/twiml/EH123456789abcdef123456789abcdef12', // Replace with your TwiML Bin URL
-          statusCallback: `${process.env.API_BASE_URL || 'https://smarttext-webhook-kyle-davis-projects-30fc1531.vercel.app'}/api/missed-call`
+          statusCallback: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000'}/api/missed-call`
         };
         
         const result = await configureNumber(phoneNumber, options);
@@ -114,7 +114,7 @@ async function main() {
         const bulkOptions = {
           voiceUrl: process.env.DEFAULT_TWIML_BIN_URL || 
             'https://handler.twilio.com/twiml/EH123456789abcdef123456789abcdef12', // Replace with your TwiML Bin URL
-          statusCallback: `${process.env.API_BASE_URL || 'https://smarttext-webhook-kyle-davis-projects-30fc1531.vercel.app'}/api/missed-call`
+          statusCallback: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000'}/api/missed-call`
         };
         
         const bulkResults = await bulkConfigure(bulkOptions);

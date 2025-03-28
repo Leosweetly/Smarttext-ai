@@ -43,7 +43,7 @@ Examples:
 const environments = {
   mock: {
     name: 'Mock API',
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000',
     apiPath: '/api/onboarding-test',
     authEnabled: false,
     testUsers: {
@@ -55,7 +55,7 @@ const environments = {
   },
   production: {
     name: 'Production API',
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000',
     apiPath: '/api/onboarding',
     authEnabled: true,
     testUsers: {

@@ -55,8 +55,8 @@ export async function GET(req) {
  * @returns {boolean} Whether the number is properly configured
  */
 function isNumberConfigured(number) {
-  const expectedVoiceUrl = `${process.env.API_BASE_URL || 'https://smarttext-webhook-kyle-davis-projects-30fc1531.vercel.app'}/api/twilio/voice`;
-  const expectedStatusCallback = `${process.env.API_BASE_URL || 'https://smarttext-webhook-kyle-davis-projects-30fc1531.vercel.app'}/api/missed-call`;
+  const expectedVoiceUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000'}/api/twilio/voice`;
+  const expectedStatusCallback = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000'}/api/missed-call`;
   
   return (
     number.voiceUrl === expectedVoiceUrl &&

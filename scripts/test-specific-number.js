@@ -56,7 +56,7 @@ async function simulateMissedCall(fromNumber, toNumber) {
   
   try {
     // Make a POST request to the missed call endpoint
-    const response = await fetch(`${process.env.API_BASE_URL || 'http://localhost:3000'}/api/missed-call`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000'}/api/missed-call`, {
       method: 'POST',
       body: formData
     });

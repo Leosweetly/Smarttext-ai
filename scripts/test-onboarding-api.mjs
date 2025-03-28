@@ -18,7 +18,7 @@ import fetch from 'node-fetch';
 
 // Configuration
 const config = {
-  apiBaseUrl: 'http://localhost:3000',
+  apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000',
   useTestEndpoints: true, // Set to false to test the real API
   authentication: false, // Set to true to use authentication
   authToken: 'test-auth-token', // Replace with a real token if authentication is enabled
