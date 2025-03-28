@@ -16,7 +16,7 @@ require('dotenv').config({ path: '.env.local' });
 const Airtable = require('airtable');
 
 // Configuration
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
+const AIRTABLE_PAT = process.env.AIRTABLE_PAT;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 const AIRTABLE_TABLE_NAME = 'Businesses'; // Change this to match your table name
 
@@ -25,10 +25,10 @@ async function testAirtableIntegration() {
   console.log('------------------------------');
   
   // Check if Airtable API key is configured
-  if (!AIRTABLE_API_KEY) {
+  if (!AIRTABLE_PAT) {
     console.error('❌ Airtable API key is not configured');
-    console.log('\nPlease set the AIRTABLE_API_KEY environment variable in your .env.local file:');
-    console.log('AIRTABLE_API_KEY=your_airtable_api_key');
+    console.log('\nPlease set the AIRTABLE_PAT environment variable in your .env.local file:');
+    console.log('AIRTABLE_PAT=your_airtable_api_key');
     return;
   }
   
@@ -45,7 +45,7 @@ async function testAirtableIntegration() {
   try {
     // Initialize Airtable
     Airtable.configure({
-      apiKey: AIRTABLE_API_KEY,
+      apiKey: AIRTABLE_PAT,
     });
     
     const base = Airtable.base(AIRTABLE_BASE_ID);

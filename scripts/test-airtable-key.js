@@ -3,18 +3,18 @@ require('dotenv').config({ path: '.env.local' });
 const Airtable = require('airtable');
 
 console.log('Testing Airtable API key...');
-console.log('API Key:', process.env.AIRTABLE_API_KEY);
+console.log('API Key:', process.env.AIRTABLE_PAT);
 console.log('Base ID:', process.env.AIRTABLE_BASE_ID);
 
 // Initialize Airtable with API key
 try {
-  const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
+  const base = new Airtable({ apiKey: process.env.AIRTABLE_PAT }).base(process.env.AIRTABLE_BASE_ID);
   
   // Try to access the base metadata
   console.log('\nTrying to access base metadata...');
   fetch(`https://api.airtable.com/v0/meta/bases/${process.env.AIRTABLE_BASE_ID}`, {
     headers: {
-      'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
+      'Authorization': `Bearer ${process.env.AIRTABLE_PAT}`,
       'Content-Type': 'application/json'
     }
   })

@@ -17,14 +17,14 @@ dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
 // Initialize Airtable
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY || process.env.AIRTABLE_PAT;
+const AIRTABLE_PAT = process.env.AIRTABLE_PAT || process.env.AIRTABLE_PAT;
 
-if (!AIRTABLE_BASE_ID || !AIRTABLE_API_KEY) {
-  console.error('Error: AIRTABLE_BASE_ID and AIRTABLE_API_KEY (or AIRTABLE_PAT) are required');
+if (!AIRTABLE_BASE_ID || !AIRTABLE_PAT) {
+  console.error('Error: AIRTABLE_BASE_ID and AIRTABLE_PAT (or AIRTABLE_PAT) are required');
   process.exit(1);
 }
 
-const base = new Airtable({ apiKey: AIRTABLE_API_KEY }).base(AIRTABLE_BASE_ID);
+const base = new Airtable({ apiKey: AIRTABLE_PAT }).base(AIRTABLE_BASE_ID);
 
 async function addTestBusiness() {
   try {

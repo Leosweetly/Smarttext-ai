@@ -53,7 +53,7 @@ async function testAirtableConnection() {
   
   try {
     // Check if Airtable credentials are set
-    if (!process.env.AIRTABLE_API_KEY || !process.env.AIRTABLE_BASE_ID) {
+    if (!process.env.AIRTABLE_PAT || !process.env.AIRTABLE_BASE_ID) {
       logError('Airtable credentials not found in environment variables');
       return false;
     }
@@ -61,7 +61,7 @@ async function testAirtableConnection() {
     logInfo('Airtable credentials found in environment variables');
     
     // Initialize Airtable base
-    const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
+    const base = new Airtable({ apiKey: process.env.AIRTABLE_PAT }).base(process.env.AIRTABLE_BASE_ID);
     
     // Try to get the Businesses table
     const businessesTable = base('Businesses');
@@ -93,7 +93,7 @@ async function testBusinessDataRetrieval() {
   
   try {
     // Initialize Airtable base
-    const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
+    const base = new Airtable({ apiKey: process.env.AIRTABLE_PAT }).base(process.env.AIRTABLE_BASE_ID);
     const businessesTable = base('Businesses');
     
     // Get all businesses
@@ -146,7 +146,7 @@ async function testBusinessCreationAndUpdates() {
   
   try {
     // Initialize Airtable base
-    const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
+    const base = new Airtable({ apiKey: process.env.AIRTABLE_PAT }).base(process.env.AIRTABLE_BASE_ID);
     const businessesTable = base('Businesses');
     
     // Create a test business
@@ -218,9 +218,9 @@ async function runTests() {
   
   // Check for Airtable credentials
   logInfo('Checking for Airtable credentials...');
-  if (!process.env.AIRTABLE_API_KEY || !process.env.AIRTABLE_BASE_ID) {
+  if (!process.env.AIRTABLE_PAT || !process.env.AIRTABLE_BASE_ID) {
     logError('Airtable credentials not found in environment variables');
-    logInfo('Please add AIRTABLE_API_KEY and AIRTABLE_BASE_ID to .env.local');
+    logInfo('Please add AIRTABLE_PAT and AIRTABLE_BASE_ID to .env.local');
     return;
   }
   

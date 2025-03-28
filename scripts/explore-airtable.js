@@ -3,7 +3,7 @@ require('dotenv').config({ path: '.env.local' });
 const Airtable = require('airtable');
 
 // Initialize Airtable with API key
-const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
+const base = new Airtable({ apiKey: process.env.AIRTABLE_PAT }).base(process.env.AIRTABLE_BASE_ID);
 
 // Function to get all tables in the base
 async function getTables() {
@@ -11,7 +11,7 @@ async function getTables() {
     // Airtable doesn't have a direct API to list tables, so we'll make a request to the base metadata
     const response = await fetch(`https://api.airtable.com/v0/meta/bases/${process.env.AIRTABLE_BASE_ID}/tables`, {
       headers: {
-        'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
+        'Authorization': `Bearer ${process.env.AIRTABLE_PAT}`,
         'Content-Type': 'application/json'
       }
     });
