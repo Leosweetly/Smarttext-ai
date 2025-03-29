@@ -1,0 +1,2 @@
+curl -fsSL https://raw.githubusercontent.com/Leosweetly/nextjs-api-routes-migration/main/execute-migration-plan.sh | bash
+
