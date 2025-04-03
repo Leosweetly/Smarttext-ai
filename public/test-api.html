@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Airtable API Endpoints</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+        }
+        .endpoint-selector {
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: white;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Airtable API Endpoints</h1>
+    <p>This page tests the Airtable integration API endpoints.</p>
+    
+    <div class="tabs">
+        <div class="tab active" data-tab="local">Test Local Endpoints</div>
+        <div class="tab" data-tab="remote">Test Remote Endpoints</div>
+    </div>
+    
+    <div id="local-tab" class="tab-content active">
+        <h2>Test Local API Endpoints</h2>
+        
+        <div class="endpoint-selector">
+            <label for="endpoint-select">Select Endpoint:</label>
+            <select id="endpoint-select">
+                <option value="/api/update-business-info">/api/update-business-info</option>
+                <option value="/api/update-business-info-v2">/api/update-business-info-v2</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="business-name">Business Name:</label>
+            <input type="text" id="business-name" value="Test Business">
+        </div>
+        
+        <div class="form-group">
+            <label for="business-industry">Industry:</label>
+            <input type="text" id="business-industry" value="Technology">
+        </div>
+        
+        <div class="form-group">
+            <label for="business-size">Size:</label>
+            <select id="business-size">
+                <option value="Small">Small</option>
+                <option value="Medium">Medium</option>
+                <option value="Large">Large</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="business-website">Website:</label>
+            <input type="text" id="business-website" value="https://example.com">
+        </div>
+        
+        <button id="test-local-button">Test Local Endpoint</button>
+        
+        <div class="result">
+            <h2>Response:</h2>
+            <pre id="local-response">Click the button to test the API endpoint.</pre>
+        </div>
+    </div>
+    
+    <div id="remote-tab" class="tab-content">
+        <h2>Test Remote API Endpoint</h2>
+        
+        <div class="form-group">
+            <label for="remote-url">Remote API URL:</label>
+            <input type="text" id="remote-url" value="https://smarttext-ai.vercel.app/api/update-business-info">
+        </div>
+        
+        <div class="form-group">
+            <label for="remote-business-name">Business Name:</label>
+            <input type="text" id="remote-business-name" value="Test Business (Remote)">
+        </div>
+        
+        <div class="form-group">
+            <label for="remote-business-industry">Industry:</label>
+            <input type="text" id="remote-business-industry" value="Technology">
+        </div>
+        
+        <div class="form-group">
+            <label for="remote-business-size">Size:</label>
+            <select id="remote-business-size">
+                <option value="Small">Small</option>
+                <option value="Medium">Medium</option>
+                <option value="Large">Large</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="remote-business-website">Website:</label>
+            <input type="text" id="remote-business-website" value="https://example.com">
+        </div>
+        
+        <button id="test-remote-button">Test Remote Endpoint</button>
+        
+        <div class="result">
+            <h2>Response:</h2>
+            <pre id="remote-response">Click the button to test the API endpoint.</pre>
+        </div>
+    </div>
+    
+    <script>
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and tab contents
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+            });
+        });
+        
+        // Test local endpoint
+        document.getElementById('test-local-button').addEventListener('click', async () => {
+            const responseElement = document.getElementById('local-response');
+            responseElement.textContent = 'Loading...';
+            
+            const endpoint = document.getElementById('endpoint-select').value;
+            const name = document.getElementById('business-name').value;
+            const industry = document.getElementById('business-industry').value;
+            const size = document.getElementById('business-size').value;
+            const website = document.getElementById('business-website').value;
+            
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name,
+                        industry,
+                        size,
+                        website
+                    }),
+                });
+                
+                const responseText = await response.text();
+                
+                try {
+                    const data = JSON.parse(responseText);
+                    responseElement.textContent = JSON.stringify(data, null, 2);
+                } catch (error) {
+                    responseElement.textContent = `Error parsing JSON: ${error.message}\n\nRaw response: ${responseText}`;
+                }
+                
+                responseElement.textContent += `\n\nStatus: ${response.status} ${response.statusText}`;
+            } catch (error) {
+                responseElement.textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        // Test remote endpoint
+        document.getElementById('test-remote-button').addEventListener('click', async () => {
+            const responseElement = document.getElementById('remote-response');
+            responseElement.textContent = 'Loading...';
+            
+            const url = document.getElementById('remote-url').value;
+            const name = document.getElementById('remote-business-name').value;
+            const industry = document.getElementById('remote-business-industry').value;
+            const size = document.getElementById('remote-business-size').value;
+            const website = document.getElementById('remote-business-website').value;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name,
+                        industry,
+                        size,
+                        website
+                    }),
+                });
+                
+                const responseText = await response.text();
+                
+                try {
+                    const data = JSON.parse(responseText);
+                    responseElement.textContent = JSON.stringify(data, null, 2);
+                } catch (error) {
+                    responseElement.textContent = `Error parsing JSON: ${error.message}\n\nRaw response: ${responseText}`;
+                }
+                
+                responseElement.textContent += `\n\nStatus: ${response.status} ${response.statusText}`;
+            } catch (error) {
+                responseElement.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

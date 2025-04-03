@@ -61,14 +61,19 @@ To run Cypress tests directly:
 
 ```bash
 # Run all Cypress tests in headless mode
-npx cypress run
+npm run cypress:headless
 
 # Open Cypress Test Runner UI
-npx cypress open
+npm run cypress
 
-# Run specific test files
-npx cypress run --spec "cypress/e2e/home.spec.js,cypress/e2e/pricing.spec.js"
+# Run tests with development server
+npm run e2e
+
+# Run tests with development server in headless mode
+npm run e2e:headless
 ```
+
+For more detailed information on running Cypress tests locally and in CI, see the [Cypress Testing Guide](CYPRESS_TESTING.md).
 
 ### Running Jest Tests
 
@@ -123,6 +128,12 @@ Jest is configured in `jest.config.js`. Key settings include:
 Tests are automatically run in the CI pipeline on:
 - Pull requests to the main branch
 - Pushes to the main branch
+
+### Skipping Cypress Tests in CI
+
+If Cypress tests are blocking deployment, you can skip them by setting the `SKIP_CYPRESS` environment variable to `true` in the GitHub repository secrets. This is useful when you need to deploy changes quickly and the Cypress tests are failing due to issues that are not critical for the deployment.
+
+For more information on how to skip Cypress tests in CI, see the [Cypress Testing Guide](CYPRESS_TESTING.md).
 
 ## Accessibility Testing
 

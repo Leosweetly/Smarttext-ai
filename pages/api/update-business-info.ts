@@ -1,13 +1,16 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import Airtable from 'airtable';
-
-const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
-  process.env.AIRTABLE_BASE_ID || ''
-);
-const table = base('Businesses');
+import { getTable } from '../../lib/data/airtable-client';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  res.setHeader('Access-Control-Allow-Origin', 'https://www.getsmarttext.com');
+  const allowedOrigins = ['http://localhost:8080', 'https://www.getsmarttext.com'];
+  const origin = req.headers.origin as string;
+
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -15,29 +18,64 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { name, industry, size, website, recordId } = req.body;
+    const {
+      name,
+      phoneNumber,
+      industry,
+      hoursJson,
+      website,
+      teamSize,
+      address,
+      email,
+      onlineOrderingLink,
+      reservationLink,
+      recordId,
+    } = req.body;
 
-    if (!name || !industry || !size) {
+    if (!name || !industry || !phoneNumber || !hoursJson) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const recordData: any = {
-      Name: name,
-      Industry: industry,
-      Size: size,
+    const fields: Record<string, string> = {
+      'Business Name': name,
+      'Phone Number': phoneNumber,
+      'Industry': industry,
+      'Hours JSON': hoursJson,
+      'Website': website || '',
+      'Team Size': teamSize || '',
+      'Address': address || '',
+      'Email': email || '',
     };
-    if (website) recordData.Website = website;
 
-    let record;
-    if (recordId) {
-      record = await table.update(recordId, { fields: recordData });
-    } else {
-      record = await table.create({ fields: recordData });
+    if (industry === 'restaurant') {
+      if (onlineOrderingLink) fields['Online Ordering Link'] = onlineOrderingLink;
+      if (reservationLink) fields['Reservation Link'] = reservationLink;
     }
 
-    return res.status(200).json({ success: true, id: record.id });
+    const table = getTable('Businesses');
+    let record;
+
+    if (recordId) {
+      record = await table.update(recordId, { fields });
+    } else {
+      record = await table.create({ fields });
+    }
+
+    return res.status(200).json({ success: true, id: record.id, data: req.body });
   } catch (err: any) {
-    console.error('[update-business-info] Error:', err);
-    return res.status(500).json({ error: err.message || 'Server error' });
+    console.error('[update-business-info] Error:', err.message);
+    console.error('[update-business-info] Stack:', err.stack);
+
+    if (err.error === 'INVALID_API_KEY' || err.message?.includes('invalid api key')) {
+      return res.status(401).json({ error: 'Invalid Airtable API key', code: 'INVALID_API_KEY', details: err.message });
+    } else if (err.error === 'NOT_FOUND' || err.message?.includes('not found')) {
+      return res.status(404).json({ error: 'Table or record not found', code: 'NOT_FOUND', details: err.message });
+    } else if (err.error === 'PERMISSION_DENIED' || err.message?.includes('permission')) {
+      return res.status(403).json({ error: 'Permission denied', code: 'PERMISSION_DENIED', details: err.message });
+    } else if (err.message?.includes('rate limit')) {
+      return res.status(429).json({ error: 'Rate limit exceeded', code: 'RATE_LIMIT_EXCEEDED', details: err.message });
+    }
+
+    return res.status(500).json({ error: err.message || 'Server error', code: err.error || 'UNKNOWN_ERROR' });
   }
 }

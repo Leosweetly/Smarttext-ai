@@ -1,0 +1,11 @@
+{
+  "name": "smarttext-api-tests",
+  "version": "1.0.0",
+  "description": "Test scripts for SmartText API",
+  "type": "module",
+  "dependencies": {
+    "airtable": "^0.12.2",
+    "dotenv": "^16.3.1",
+    "node-fetch": "^3.3.2"
+  }
+}

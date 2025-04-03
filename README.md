@@ -111,6 +111,8 @@ npm test
 npm run cypress
 ```
 
+For more detailed information on running Cypress tests locally and in CI, see the [Cypress Testing Guide](CYPRESS_TESTING.md).
+
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

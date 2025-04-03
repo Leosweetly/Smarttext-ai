@@ -8,6 +8,10 @@
 // https://on.cypress.io/custom-commands
 // ***********************************************
 
+// Import cypress-axe for accessibility testing
+// This ensures the commands are properly registered
+import 'cypress-axe';
+
 // -- This is a parent command --
 // Cypress.Commands.add('login', (email, password) => { ... })
 

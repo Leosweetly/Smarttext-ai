@@ -2,6 +2,7 @@
   "name": "smarttext-ai",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -13,7 +14,8 @@
     "cypress": "cypress open",
     "cypress:headless": "cypress run",
     "e2e": "start-server-and-test dev http://localhost:3000 cypress",
-    "e2e:headless": "start-server-and-test dev http://localhost:3000 cypress:headless"
+    "e2e:headless": "start-server-and-test dev http://localhost:3000 cypress:headless",
+    "verify:cypress": "node scripts/verify-cypress.js"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "^4.1.0",
@@ -50,6 +52,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "ngrok": "^5.0.0-beta.2",
     "node-fetch": "^3.3.2",
-    "start-server-and-test": "^2.0.3"
+    "start-server-and-test": "^2.0.3",
+    "wait-on": "^8.0.3"
   }
 }
