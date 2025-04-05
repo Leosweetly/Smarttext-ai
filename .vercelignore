@@ -1,0 +1,11 @@
+# Ignore test files
+**/test.ts
+**/test.js
+api/test.js
+pages/api/test.ts
+
+# Ignore development files
+.git
+.github
+.vscode
+node_modules

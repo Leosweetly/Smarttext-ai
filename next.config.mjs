@@ -19,6 +19,22 @@ const nextConfig = {
       },
     ];
   },
+  // Explicitly exclude routes from the build
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'].filter(ext => 
+    // This ensures files named test.ts are not treated as pages
+    !(ext === 'ts' && process.env.NODE_ENV === 'production')
+  ),
+  // Customize webpack config to exclude test files
+  webpack: (config, { dev, isServer }) => {
+    if (!dev && isServer) {
+      // Exclude test files from production build
+      config.module.rules.push({
+        test: /\/test\.(js|ts)x?$/,
+        loader: 'ignore-loader',
+      });
+    }
+    return config;
+  },
   // Add security headers
   async headers() {
     return [
