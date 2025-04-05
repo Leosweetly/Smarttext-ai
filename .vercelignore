@@ -4,6 +4,9 @@
 api/test.js
 pages/api/test.ts
 
+# Ignore old auth directory to prevent conflicts
+pages/api/auth
+
 # Ignore development files
 .git
 .github

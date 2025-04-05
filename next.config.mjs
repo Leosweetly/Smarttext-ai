@@ -17,6 +17,26 @@ const nextConfig = {
         destination: '/api/health',
         permanent: true,
       },
+      {
+        source: '/api/auth/login',
+        destination: '/api/authentication/login',
+        permanent: true,
+      },
+      {
+        source: '/api/auth/callback',
+        destination: '/api/authentication/callback',
+        permanent: true,
+      },
+      {
+        source: '/api/auth/logout',
+        destination: '/api/authentication/logout',
+        permanent: true,
+      },
+      {
+        source: '/api/auth/:path*',
+        destination: '/api/authentication/:path*',
+        permanent: true,
+      },
     ];
   },
   // Explicitly exclude routes from the build

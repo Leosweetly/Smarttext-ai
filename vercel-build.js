@@ -15,7 +15,13 @@ const __dirname = path.dirname(__filename);
 // Files to check and remove if they exist
 const filesToRemove = [
   'api/test.js',
-  'pages/api/test.ts'
+  'pages/api/test.ts',
+  'pages/api/auth/[...auth0].ts'
+];
+
+// Directories to check and remove if they exist
+const dirsToRemove = [
+  'pages/api/auth'
 ];
 
 console.log('🔍 Running custom Vercel build script...');
@@ -37,6 +43,23 @@ filesToRemove.forEach(filePath => {
   }
 });
 
+// Check and remove directories
+dirsToRemove.forEach(dirPath => {
+  const fullPath = path.join(process.cwd(), dirPath);
+  
+  if (fs.existsSync(fullPath)) {
+    console.log(`🗑️  Removing directory ${dirPath}...`);
+    try {
+      fs.rmSync(fullPath, { recursive: true, force: true });
+      console.log(`✅ Successfully removed directory ${dirPath}`);
+    } catch (error) {
+      console.error(`❌ Error removing directory ${dirPath}:`, error.message);
+    }
+  } else {
+    console.log(`✅ Directory ${dirPath} does not exist, skipping`);
+  }
+});
+
 // Create a .nowignore file to ensure test files are ignored
 const nowIgnorePath = path.join(process.cwd(), '.nowignore');
 const ignoreContent = `
@@ -45,6 +68,9 @@ const ignoreContent = `
 **/test.js
 api/test.js
 pages/api/test.ts
+
+# Ignore old auth directory to prevent conflicts
+pages/api/auth
 `;
 
 try {
