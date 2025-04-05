@@ -1,5 +1,5 @@
 /**
- * Test script for the test API endpoint
+ * Test script for the health API endpoint
  * 
  * This script sends a GET request to the API endpoint to verify it's working correctly.
  */
@@ -7,10 +7,10 @@
 import fetch from 'node-fetch';
 
 // The URL of the API endpoint (production server)
-const API_URL = 'https://smarttext-webhook-h4qx2v7kr-kyle-davis-projects-30fc1531.vercel.app/api/test';
+const API_URL = 'https://smarttext-webhook-h4qx2v7kr-kyle-davis-projects-30fc1531.vercel.app/api/health';
 
 async function testApi() {
-  console.log('Testing test API endpoint...');
+  console.log('Testing health API endpoint...');
   console.log(`Sending GET request to ${API_URL}`);
   
   try {
