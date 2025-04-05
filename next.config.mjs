@@ -9,6 +9,16 @@ const nextConfig = {
   images: {
     domains: ['images.unsplash.com'],
   },
+  // Add redirects for legacy endpoints
+  async redirects() {
+    return [
+      {
+        source: '/api/test',
+        destination: '/api/health',
+        permanent: true,
+      },
+    ];
+  },
   // Add security headers
   async headers() {
     return [
