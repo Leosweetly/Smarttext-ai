@@ -39,11 +39,10 @@ const nextConfig = {
       },
     ];
   },
-  // Explicitly exclude routes from the build
-  pageExtensions: ['tsx', 'ts', 'jsx', 'js'].filter(ext => 
-    // This ensures files named test.ts are not treated as pages
-    !(ext === 'ts' && process.env.NODE_ENV === 'production')
-  ),
+  // Explicitly exclude test files from the build
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
+  
+  // Use webpack to exclude test files
   // Customize webpack config to exclude test files
   webpack: (config, { dev, isServer }) => {
     if (!dev && isServer) {
