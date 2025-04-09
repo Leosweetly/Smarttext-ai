@@ -7,13 +7,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    console.log('✅ Airtable sync webhook hit!', req.body);
+    console.log('✅ Incoming SMS webhook from Twilio:', req.body);
 
-    // TODO: Here we can process and sync the data.
-    // For now, just respond to Zapier to confirm
-    res.status(200).json({ success: true, message: 'Webhook received', data: req.body });
+    const incomingMessage = req.body.Body;
+    const fromNumber = req.body.From;
+
+    console.log(`📩 Message from ${fromNumber}: ${incomingMessage}`);
+
+    // Respond to Twilio with a basic message (must be XML!)
+    res.setHeader('Content-Type', 'text/xml');
+    res.status(200).send(`
+      <Response>
+        <Message>Thanks for your message! We'll get back to you shortly.</Message>
+      </Response>
+    `);
   } catch (error: any) {
-    console.error('Error processing Airtable sync:', error.message);
+    console.error('❌ Error handling incoming SMS:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 }
