@@ -7,6 +7,9 @@ pages/api/test.ts
 # Ignore old auth directory to prevent conflicts
 pages/api/auth
 
+# Explicitly include important API routes
+!pages/api/airtable-sync.ts
+
 # Ignore development files
 .git
 .github

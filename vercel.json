@@ -11,7 +11,8 @@
       "use": "@vercel/next",
       "config": {
         "skipBuildCache": true,
-        "excludeFiles": ["**/test.ts", "**/test.js", "api/test.js", "pages/api/test.ts"]
+        "excludeFiles": ["**/test.ts", "**/test.js", "api/test.js", "pages/api/test.ts"],
+        "includeFiles": ["pages/api/airtable-sync.ts"]
       }
     }
   ],

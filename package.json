@@ -10,6 +10,7 @@
     "dev:3001": "PORT=3001 npm run dev",
     "vercel-build": "next build && node vercel-build.js",
     "build": "npm run vercel-build",
+    "build:standard": "next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",

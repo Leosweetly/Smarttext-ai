@@ -12,6 +12,24 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Check API directory contents before build
+const apiDir = path.join(process.cwd(), 'pages/api');
+console.log('🔍 Checking API directory contents before build:');
+if (fs.existsSync(apiDir)) {
+  const apiFiles = fs.readdirSync(apiDir);
+  console.log('📁 API directory files:', apiFiles);
+  
+  // Specifically check for airtable-sync.ts
+  const airtableSyncPath = path.join(apiDir, 'airtable-sync.ts');
+  if (fs.existsSync(airtableSyncPath)) {
+    console.log('✅ airtable-sync.ts exists before build');
+  } else {
+    console.log('❌ airtable-sync.ts does not exist before build');
+  }
+} else {
+  console.log('❌ API directory does not exist');
+}
+
 // Files to check and remove if they exist
 const filesToRemove = [
   'api/test.js',
@@ -71,6 +89,9 @@ pages/api/test.ts
 
 # Ignore old auth directory to prevent conflicts
 pages/api/auth
+
+# Explicitly include important API routes
+!pages/api/airtable-sync.ts
 `;
 
 try {
@@ -81,3 +102,20 @@ try {
 }
 
 console.log('✅ Custom build script completed');
+
+// Check API directory contents after build
+console.log('🔍 Checking API directory contents after build:');
+if (fs.existsSync(apiDir)) {
+  const apiFiles = fs.readdirSync(apiDir);
+  console.log('📁 API directory files after build:', apiFiles);
+  
+  // Specifically check for airtable-sync.ts
+  const airtableSyncPath = path.join(apiDir, 'airtable-sync.ts');
+  if (fs.existsSync(airtableSyncPath)) {
+    console.log('✅ airtable-sync.ts exists after build');
+  } else {
+    console.log('❌ airtable-sync.ts does not exist after build');
+  }
+} else {
+  console.log('❌ API directory does not exist after build');
+}

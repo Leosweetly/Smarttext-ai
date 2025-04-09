@@ -48,9 +48,13 @@ const nextConfig = {
     if (!dev && isServer) {
       // Exclude test files from production build
       config.module.rules.push({
-        test: /\/test\.(js|ts)x?$/,
+        test: /\/(^|\/|\\)test\.(js|ts)x?$/,
         loader: 'ignore-loader',
       });
+      
+      // Log all files being processed to help debug
+      console.log('🔍 Webpack is processing files. API routes should include:');
+      console.log('✅ pages/api/airtable-sync.ts - This should NOT be excluded');
     }
     return config;
   },
