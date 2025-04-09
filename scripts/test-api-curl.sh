@@ -12,9 +12,21 @@ NC='\033[0m' # No Color
 TIMESTAMP=$(date +"%Y-%m-%d %H:%M")
 TEST_DATA='{
   "name": "Test Business '"$TIMESTAMP"'",
+  "phoneNumber": "+1234567890",
   "industry": "Technology",
+  "hoursJson": "{\"monday\":\"9:00 AM - 5:00 PM\",\"tuesday\":\"9:00 AM - 5:00 PM\",\"wednesday\":\"9:00 AM - 5:00 PM\",\"thursday\":\"9:00 AM - 5:00 PM\",\"friday\":\"9:00 AM - 5:00 PM\",\"saturday\":\"Closed\",\"sunday\":\"Closed\"}",
   "size": "Small",
-  "website": "https://example.com"
+  "website": "https://example.com",
+  "faqs": [
+    {
+      "question": "What services do you offer?",
+      "answer": "We offer a wide range of technology services including web development, app development, and cloud solutions."
+    },
+    {
+      "question": "What are your hours?",
+      "answer": "We are open Monday through Friday, 9:00 AM to 5:00 PM."
+    }
+  ]
 }'
 
 # Function to test an endpoint
@@ -74,9 +86,21 @@ test_update_record() {
   # Update data
   local update_data='{
     "name": "Test Business '"$TIMESTAMP"' (Updated)",
+    "phoneNumber": "+1234567890",
     "industry": "Technology",
+    "hoursJson": "{\"monday\":\"9:00 AM - 5:00 PM\",\"tuesday\":\"9:00 AM - 5:00 PM\",\"wednesday\":\"9:00 AM - 5:00 PM\",\"thursday\":\"9:00 AM - 5:00 PM\",\"friday\":\"9:00 AM - 5:00 PM\",\"saturday\":\"Closed\",\"sunday\":\"Closed\"}",
     "size": "Small",
     "website": "https://example.com",
+    "faqs": [
+      {
+        "question": "What services do you offer?",
+        "answer": "We offer a wide range of technology services including web development, app development, and cloud solutions (Updated)."
+      },
+      {
+        "question": "What are your hours?",
+        "answer": "We are open Monday through Friday, 9:00 AM to 5:00 PM."
+      }
+    ],
     "recordId": "'"$record_id"'"
   }'
   

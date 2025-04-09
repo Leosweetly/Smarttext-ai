@@ -48,7 +48,7 @@ async function addTestBusiness() {
       name: 'SmartText AI Test Business',
       businessType: 'salon',
       phoneNumber: '+18186518560', // SmartText AI Twilio number
-      forwardingNumber: '+16193721633', // Your phone number for testing
+      forwardingNumber: '+12125551234', // Your phone number for testing
       address: '123 Test St, Test City, CA 12345',
       subscriptionTier: 'pro', // Using pro tier for better auto-text features
       hours: {

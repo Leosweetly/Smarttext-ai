@@ -4,7 +4,7 @@
  * This script tests the missed call functionality without actually sending SMS.
  * It helps debug issues with the business data lookup and message generation.
  * 
- * Usage: node scripts/test-missed-call-debug.js +16193721633 +18186518560
+ * Usage: node scripts/test-missed-call-debug.js +12125551234 +18186518560
  * 
  * Where:
  * - First argument is the caller's phone number (From)
@@ -20,7 +20,7 @@ const path = require('path');
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
 // Default phone numbers if not provided as arguments
-const DEFAULT_FROM = '+16193721633'; // Default caller number
+const DEFAULT_FROM = '+12125551234'; // Default caller number
 const DEFAULT_TO = '+18186518560';   // Default Twilio number
 
 async function debugMissedCall(fromNumber, toNumber) {

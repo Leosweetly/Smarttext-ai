@@ -5,7 +5,7 @@
  * a missed call from a specific phone number to a Twilio number.
  * It bypasses the actual phone call process and directly triggers the auto-text.
  * 
- * Usage: node scripts/test-direct-missed-call.js +16193721633 +18186518560
+ * Usage: node scripts/test-direct-missed-call.js +12125551234 +18186518560
  * 
  * Where:
  * - First argument is the caller's phone number (From)
@@ -20,7 +20,7 @@ const axios = require('axios');
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
 // Default phone numbers if not provided as arguments
-const DEFAULT_FROM = '+16193721633'; // Default caller number
+const DEFAULT_FROM = '+12125551234'; // Default caller number
 const DEFAULT_TO = '+18186518560';   // Default Twilio number
 
 async function simulateMissedCall(fromNumber, toNumber) {

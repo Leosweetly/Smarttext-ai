@@ -45,12 +45,14 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        input, select {
+        input, select, textarea {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
             box-sizing: border-box;
+            font-family: monospace;
+            font-size: 14px;
         }
         .tabs {
             display: flex;
@@ -105,8 +107,18 @@
         </div>
         
         <div class="form-group">
+            <label for="business-phone">Phone Number:</label>
+            <input type="text" id="business-phone" value="+1234567890">
+        </div>
+        
+        <div class="form-group">
             <label for="business-industry">Industry:</label>
             <input type="text" id="business-industry" value="Technology">
+        </div>
+        
+        <div class="form-group">
+            <label for="business-hours">Hours JSON:</label>
+            <textarea id="business-hours" rows="4">{"monday":"9:00 AM - 5:00 PM","tuesday":"9:00 AM - 5:00 PM","wednesday":"9:00 AM - 5:00 PM","thursday":"9:00 AM - 5:00 PM","friday":"9:00 AM - 5:00 PM","saturday":"Closed","sunday":"Closed"}</textarea>
         </div>
         
         <div class="form-group">
@@ -121,6 +133,11 @@
         <div class="form-group">
             <label for="business-website">Website:</label>
             <input type="text" id="business-website" value="https://example.com">
+        </div>
+        
+        <div class="form-group">
+            <label for="business-faqs">FAQs (JSON):</label>
+            <textarea id="business-faqs" rows="4">[{"question":"What services do you offer?","answer":"We offer a wide range of technology services including web development, app development, and cloud solutions."},{"question":"What are your hours?","answer":"We are open Monday through Friday, 9:00 AM to 5:00 PM."}]</textarea>
         </div>
         
         <button id="test-local-button">Test Local Endpoint</button>
@@ -145,8 +162,18 @@
         </div>
         
         <div class="form-group">
+            <label for="remote-business-phone">Phone Number:</label>
+            <input type="text" id="remote-business-phone" value="+1234567890">
+        </div>
+        
+        <div class="form-group">
             <label for="remote-business-industry">Industry:</label>
             <input type="text" id="remote-business-industry" value="Technology">
+        </div>
+        
+        <div class="form-group">
+            <label for="remote-business-hours">Hours JSON:</label>
+            <textarea id="remote-business-hours" rows="4">{"monday":"9:00 AM - 5:00 PM","tuesday":"9:00 AM - 5:00 PM","wednesday":"9:00 AM - 5:00 PM","thursday":"9:00 AM - 5:00 PM","friday":"9:00 AM - 5:00 PM","saturday":"Closed","sunday":"Closed"}</textarea>
         </div>
         
         <div class="form-group">
@@ -161,6 +188,11 @@
         <div class="form-group">
             <label for="remote-business-website">Website:</label>
             <input type="text" id="remote-business-website" value="https://example.com">
+        </div>
+        
+        <div class="form-group">
+            <label for="remote-business-faqs">FAQs (JSON):</label>
+            <textarea id="remote-business-faqs" rows="4">[{"question":"What services do you offer?","answer":"We offer a wide range of technology services including web development, app development, and cloud solutions."},{"question":"What are your hours?","answer":"We are open Monday through Friday, 9:00 AM to 5:00 PM."}]</textarea>
         </div>
         
         <button id="test-remote-button">Test Remote Endpoint</button>
@@ -197,6 +229,10 @@
             const website = document.getElementById('business-website').value;
             
             try {
+                const phoneNumber = document.getElementById('business-phone').value;
+                const hoursJson = document.getElementById('business-hours').value;
+                const faqs = document.getElementById('business-faqs').value;
+                
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
@@ -204,9 +240,12 @@
                     },
                     body: JSON.stringify({
                         name,
+                        phoneNumber,
                         industry,
+                        hoursJson,
                         size,
-                        website
+                        website,
+                        faqs: JSON.parse(faqs)
                     }),
                 });
                 
@@ -237,6 +276,10 @@
             const website = document.getElementById('remote-business-website').value;
             
             try {
+                const phoneNumber = document.getElementById('remote-business-phone').value;
+                const hoursJson = document.getElementById('remote-business-hours').value;
+                const faqs = document.getElementById('remote-business-faqs').value;
+                
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: {
@@ -244,9 +287,12 @@
                     },
                     body: JSON.stringify({
                         name,
+                        phoneNumber,
                         industry,
+                        hoursJson,
                         size,
-                        website
+                        website,
+                        faqs: JSON.parse(faqs)
                     }),
                 });
                 

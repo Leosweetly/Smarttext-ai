@@ -16,7 +16,7 @@ const FormData = require('form-data');
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
 // Default phone numbers
-const CALLER_NUMBER = '+16193721633'; // Your phone number
+const CALLER_NUMBER = '+12125551234'; // Your phone number
 const TWILIO_NUMBER = '+18186518560'; // SmartText AI Twilio number
 
 async function testMissedCall() {
