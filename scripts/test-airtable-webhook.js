@@ -12,7 +12,7 @@
 import fetch from 'node-fetch';
 
 // Get the base URL from command line args or use production URL
-const baseUrl = process.argv[2] || 'https://smarttext-connect.vercel.app';
+const baseUrl = process.argv[2] || 'https://smarttext-ai.vercel.app';
 const endpoint = '/api/webhooks/airtable';
 const url = `${baseUrl}${endpoint}`;
 
