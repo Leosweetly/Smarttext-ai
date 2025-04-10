@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import twilio from 'twilio';
-import { getBusinessByPhoneNumber, logMissedCall } from '../../lib/airtable';
+import { getBusinessByPhoneNumber, logMissedCall, logCallToCallLogs } from '../../lib/airtable';
 import { generateMissedCallResponse } from '../../lib/openai';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -126,6 +126,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } catch (airtableError) {
       // Just log the error but don't interrupt the flow
       console.error(`❌ Failed to log missed call to Airtable:`, airtableError);
+    }
+
+    // Log the call to the Call Logs table for analytics
+    try {
+      await logCallToCallLogs({
+        businessName: business.name,
+        callerNumber: From,
+        ownerNumber: ownerPhoneNumber || "",
+        callStatus: "Missed Call",
+        notes: "Auto-logged from SmartText missed call flow"
+      });
+      console.log(`✅ Successfully logged call to Call Logs table for analytics`);
+    } catch (airtableError) {
+      // Just log the error but don't interrupt the flow
+      console.error(`❌ Failed to log call to Call Logs table:`, airtableError);
     }
 
     // Return success response

@@ -52,6 +52,8 @@ async function testMissedCall() {
       console.log(`Message that will be sent to ${CALLER_NUMBER}:`);
       console.log(`"${response.data.message}"`);
       console.log('\nCheck your phone for the text message. It should arrive shortly.');
+      console.log('\n✅ The call should also be logged to Airtable "Call Logs" table for analytics.');
+      console.log('Check your Airtable base to verify the new record was created.');
     } else {
       console.error('\n❌ Missed call test failed:');
       console.error(response.data);
