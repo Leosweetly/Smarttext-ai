@@ -2,6 +2,13 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import twilio from 'twilio';
 import { getBusinessByPhoneNumber, logMissedCall, logCallToCallLogs } from '../../lib/airtable';
 import { generateMissedCallResponse } from '../../lib/openai';
+import { parse } from 'querystring';
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Only allow POST requests
@@ -17,8 +24,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   });
 
   try {
+    // Parse the request body
+    let body: Record<string, any> = {};
+
+    if (req.headers['content-type'] === 'application/x-www-form-urlencoded') {
+      // Collect request body data
+      let rawBody = '';
+      for await (const chunk of req) {
+        rawBody += chunk.toString();
+      }
+      // Parse the form data
+      body = parse(rawBody) as Record<string, any>;
+    } else {
+      body = req.body || {};
+    }
+
+    console.log('✅ Parsed webhook body:', body);
+
     // Extract data from Twilio webhook
-    const { To, From, CallSid, CallStatus } = req.body;
+    const To = body.To as string;
+    const From = body.From as string;
+    const CallSid = body.CallSid as string;
+    const CallStatus = body.CallStatus as string;
 
     if (!To || !From || !CallStatus) {
       console.error('❌ Missing required fields in missed call webhook');
@@ -65,11 +92,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const messageBody = `Thanks for calling ${business.name}! We're busy helping other customers at the moment. Were you calling about general information like our hours, website, etc?`;
     console.log(`✅ Using friendly message: "${messageBody}"`);
 
-    // Send the SMS to the caller
-    const message = await client.messages.create({
+    // Send the SMS to the caller using the sendSms function
+    const { sendSms } = require('../../lib/twilio');
+    const message = await sendSms({
       body: messageBody,
       from: To,
-      to: From
+      to: From,
+      requestId: CallSid
     });
 
     console.log(`✅ Sent SMS to ${From}, message SID: ${message.sid}`);
@@ -99,10 +128,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Send notification to the business owner if we have their number
     if (ownerPhoneNumber) {
       try {
-        const ownerMessage = await client.messages.create({
+        const ownerMessage = await sendSms({
           body: `You received a missed call from ${From}. Call status: ${CallStatus}`,
           from: To,
-          to: ownerPhoneNumber
+          to: ownerPhoneNumber,
+          requestId: `${CallSid}-owner`
         });
         
         console.log(`✅ Sent notification to business owner at ${ownerPhoneNumber}, message SID: ${ownerMessage.sid}`);

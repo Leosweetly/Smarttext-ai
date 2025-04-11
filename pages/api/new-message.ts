@@ -26,6 +26,12 @@ interface FAQ {
   answer: string;
 }
 
+// Mock business interface to match Airtable record structure
+interface BusinessRecord {
+  id: string;
+  get: (field: string) => any;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Only allow POST requests
   if (req.method !== 'POST') {
@@ -69,24 +75,62 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Look up the business by phone number
-    const table = getTable('Businesses');
-    const records = await table.select({
-      filterByFormula: `{Phone Number} = "${To}"`,
-      maxRecords: 1
-    }).firstPage();
+    // Initialize business variables
+    let business: BusinessRecord;
+    let businessId: string;
+    let businessName: string;
 
-    // If no business found, log and return
-    if (records.length === 0) {
-      console.log(`[new-message] No business found with phone number ${To}`);
-      return res.status(404).json({ error: 'Business not found' });
+    // Check if we're in test mode with testMode flag
+    if (req.body.testMode === true || req.query.testMode === 'true') {
+      console.log(`[new-message] TEST MODE: Bypassing business lookup for ${To}`);
+      
+      // Create a mock business record for testing
+      business = {
+        id: 'test-business-id',
+        get: (field: string) => {
+          switch (field) {
+            case 'Business Name':
+              return 'Test Business';
+            case 'Business Type':
+              return 'restaurant';
+            case 'Auto-Reply Enabled':
+              return true;
+            case 'FAQs':
+              return JSON.stringify([
+                { question: "What are your hours?", answer: "We're open 9am-5pm Monday to Friday." },
+                { question: "Do you deliver?", answer: "Yes, we offer delivery within 5 miles." }
+              ]);
+            default:
+              return null;
+          }
+        }
+      };
+      
+      businessId = business.id;
+      businessName = business.get('Business Name') as string;
+      
+      console.log(`[new-message] Using mock business: ${businessName} (${businessId})`);
+    } else {
+      // Look up the business by phone number
+      const table = getTable('Businesses');
+      const records = await table.select({
+        filterByFormula: `{Phone Number} = "${To}"`,
+        maxRecords: 1
+      }).firstPage();
+
+      // If no business found, log and return
+      if (records.length === 0) {
+        console.log(`[new-message] No business found with phone number ${To}`);
+        return res.status(404).json({ error: 'Business not found' });
+      }
+      
+      // Use the real business from Airtable
+      business = records[0];
+      businessId = business.id;
+      businessName = business.get('Business Name') as string || 'this business';
+      
+      console.log(`[new-message] Found business: ${businessName} (${businessId})`);
     }
-
-    const business = records[0];
-    const businessId = business.id;
-    const businessName = business.get('Business Name') as string || 'this business';
-    
-    console.log(`[new-message] Found business: ${businessName} (${businessId})`);
 
     // Check if auto-reply is enabled (if the field exists)
     const autoReplyEnabled = business.get('Auto-Reply Enabled');
@@ -166,24 +210,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Normalize text helper to ignore casing, punctuation, and extra spaces
-const normalizeText = (text: string) => {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s]/gi, '') // Remove punctuation
-    .replace(/\s+/g, ' ')    // Collapse multiple spaces
-    .trim();
-};
+    const normalizeText = (text: string) => {
+      return text
+        .toLowerCase()
+        .replace(/[^\w\s]/gi, '') // Remove punctuation
+        .replace(/\s+/g, ' ')    // Collapse multiple spaces
+        .trim();
+    };
 
-const normalizedMessage = normalizeText(Body);
-// Debug logs to inspect normalized message and FAQ questions
-console.log('Normalized incoming message:', normalizedMessage);
-faqs.forEach(faq => {
-  console.log('FAQ question raw:', faq.question);
-  console.log('FAQ question normalized:', normalizeText(faq.question));
-});
-const matchedFaq = faqs.find(faq =>
-  normalizedMessage.includes(normalizeText(faq.question))
-);
+    const normalizedMessage = normalizeText(Body);
+    // Debug logs to inspect normalized message and FAQ questions
+    console.log('Normalized incoming message:', normalizedMessage);
+    faqs.forEach(faq => {
+      console.log('FAQ question raw:', faq.question);
+      console.log('FAQ question normalized:', normalizeText(faq.question));
+    });
+    const matchedFaq = faqs.find(faq =>
+      normalizedMessage.includes(normalizeText(faq.question))
+    );
 
     // Extract additional business info for OpenAI context
     const businessType = business.get('Business Type') || 'local';
@@ -274,14 +318,16 @@ const matchedFaq = faqs.find(faq =>
       console.log(`[new-message][${requestId}] Mock sent response to ${From}, message SID: ${messageSid}`);
     } else {
       try {
-        const message = await client.messages.create({
+        // Use the sendSms function from lib/twilio.ts
+        const { sendSms } = require('../../lib/twilio');
+        const message = await sendSms({
           body: responseMessage,
           from: To,
-          to: From
+          to: From,
+          requestId
         });
         
         messageSid = message.sid;
-        console.log(`[new-message][${requestId}] Sent response to ${From}, message SID: ${messageSid}`);
       } catch (twilioError: any) {
         console.error(`[new-message][${requestId}] Twilio error:`, twilioError.message);
         

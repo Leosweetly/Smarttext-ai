@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import twilio from 'twilio';
 import { getBusinessByPhoneNumber } from '../../../lib/airtable';
+import { sendSms } from '../../../lib/twilio'; // Import from the TypeScript file
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Only allow POST requests
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).end(`Method ${req.method} Not Allowed`);
@@ -11,79 +11,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   console.log('✅ Twilio voice webhook hit!', {
     body: req.body,
-    query: req.query,
     timestamp: new Date().toISOString()
   });
 
   try {
-    // Extract data from Twilio webhook
     const { To, From, CallSid } = req.body;
 
     if (!To || !From) {
-      console.error('❌ Missing required fields in Twilio voice webhook');
-      return res.status(400).json({
-        error: 'Missing required fields',
-        message: 'The Twilio webhook must include To and From fields'
-      });
+      console.error('❌ Missing To or From in Twilio webhook');
+      return res.status(400).json({ error: 'Missing To or From in Twilio webhook' });
     }
 
     console.log(`📞 Incoming call from ${From} to ${To} (CallSid: ${CallSid})`);
 
-    // Look up the business by phone number
     const business = await getBusinessByPhoneNumber(To);
+    const businessName = business?.name || 'our business';
 
-    // Initialize Twilio response
     const twiml = new twilio.twiml.VoiceResponse();
+    twiml.say(
+      { voice: 'alice' },
+      `Hey, thanks for calling ${businessName}, we're currently unavailable but we will text you shortly.`
+    );
+    twiml.hangup();
 
-    // If no business found, play a generic message
-    if (!business) {
-      console.error(`❌ No business found with phone number ${To}`);
-      twiml.say(
-        { voice: 'alice' },
-        'We\'re sorry, but this number is not associated with a business. Please check the number and try again.'
-      );
-      
-      res.setHeader('Content-Type', 'text/xml');
-      return res.status(200).send(twiml.toString());
-    }
-
-    console.log(`✅ Found business: ${business.name} (${business.id})`);
-
-    // Check if the business has a forwarding number
-    const forwardingNumber = business.customSettings?.forwardingNumber;
-    
-    if (!forwardingNumber) {
-      console.error(`❌ No forwarding number found for business ${business.id}`);
-      twiml.say(
-        { voice: 'alice' },
-        `Thank you for calling ${business.name}. We're unable to connect your call at this time. Please try again later.`
-      );
-      
-      res.setHeader('Content-Type', 'text/xml');
-      return res.status(200).send(twiml.toString());
-    }
-
-    console.log(`📞 Forwarding call to ${forwardingNumber}`);
-
-    // Forward the call to the business's forwarding number
-    const dial = twiml.dial({
-      callerId: To, // Use the Twilio number as the caller ID
-      timeout: 20,  // Ring for 20 seconds before considering it a missed call
-      action: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://smarttext-ai.vercel.app'}/api/twilio/call-status`,
-      method: 'POST'
-    });
-    
-    dial.number(forwardingNumber);
-
-    // Set response headers and send TwiML
     res.setHeader('Content-Type', 'text/xml');
-    return res.status(200).send(twiml.toString());
+    res.status(200).send(twiml.toString());
 
-  } catch (err: any) {
-    console.error(`❌ Error in voice webhook:`, err.message);
-    console.error(`Stack:`, err.stack);
+    // ✅ After voice response, send instant SMS to the caller
+    console.log('📲 Sending instant SMS to caller...');
+    await sendSms({
+      to: From,
+      from: To,
+      body: `Thanks for calling ${businessName}! We're busy helping other customers at the moment. Were you calling about general information like our hours, website, etc?`
+    });
 
-    // Return a TwiML response even in case of error
+    console.log('✅ SMS sent successfully to caller:', From);
+
+  } catch (error: any) {
+    console.error('❌ Voice handler error:', error.message);
+
     const twiml = new twilio.twiml.VoiceResponse();
     twiml.say(
       { voice: 'alice' },
@@ -91,6 +57,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
 
     res.setHeader('Content-Type', 'text/xml');
-    return res.status(200).send(twiml.toString());
+    res.status(200).send(twiml.toString());
   }
 }

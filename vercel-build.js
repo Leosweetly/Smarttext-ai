@@ -87,28 +87,8 @@ dirsToRemove.forEach(dirPath => {
   }
 });
 
-// Create a .nowignore file to ensure test files are ignored
-const nowIgnorePath = path.join(process.cwd(), '.nowignore');
-const ignoreContent = `
-# Ignore test files
-**/test.ts
-**/test.js
-api/test.js
-pages/api/test.ts
-
-# Ignore old auth directory to prevent conflicts
-pages/api/auth
-
-# Explicitly include important API routes
-!pages/api/airtable-sync.ts
-`;
-
-try {
-  fs.writeFileSync(nowIgnorePath, ignoreContent);
-  console.log('✅ Created .nowignore file');
-} catch (error) {
-  console.error('❌ Error creating .nowignore file:', error.message);
-}
+// We're using .vercelignore instead of .nowignore
+console.log('✅ Using .vercelignore file instead of .nowignore');
 
 console.log('✅ Custom build script completed');
 

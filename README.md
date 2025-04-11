@@ -95,6 +95,7 @@ This script will check if all required environment variables are set and test ea
 - [Auth0 Integration](AUTH0_INTEGRATION.md)
 - [Airtable Integration](AIRTABLE_OAUTH.md)
 - [Twilio Integration](TWILIO_INTEGRATION.md)
+- [Twilio Testing Guide](TWILIO_TESTING.md)
 - [Zapier Webhook Integration](ZAPIER_WEBHOOK_INTEGRATION.md)
 
 ## 🧪 Testing
@@ -111,7 +112,22 @@ npm test
 npm run cypress
 ```
 
-For more detailed information on running Cypress tests locally and in CI, see the [Cypress Testing Guide](CYPRESS_TESTING.md).
+### Twilio Webhook Tests
+
+```bash
+# Test incoming call webhook
+npm run test:twilio:call
+
+# Test incoming SMS webhook
+npm run test:twilio:sms
+
+# Verify test results
+npm run test:twilio:verify sms +15551234567
+```
+
+For more detailed information on testing:
+- [Cypress Testing Guide](CYPRESS_TESTING.md)
+- [Twilio Testing Guide](TWILIO_TESTING.md)
 
 ## 📝 License
 
