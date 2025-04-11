@@ -1,7 +1,16 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { validateRequest } from 'twilio/lib/webhooks/webhooks';
+import { parse } from 'querystring';
 import { getTable } from '../../lib/data/airtable-client';
 import { generateSmsResponse } from '../../lib/openai';
 import { sendSms } from '../../lib/twilio';
+
+// Disable Next.js body parser to handle raw request body
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 // Test mock phone numbers
 const TEST_MOCK_NUMBERS = {
@@ -33,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   console.log('[handler] ---- Incoming Request ----');
   console.log('[handler] Method / Path:', req.method, req.url);
   console.log('[handler] Query params:', req.query);
-  console.log('[handler] Body keys:', Object.keys(req.body || {}));
+  console.log('[handler] Headers:', req.headers);
   console.log('[handler] AIRTABLE_PAT set?:', Boolean(process.env.AIRTABLE_PAT));
   console.log('[handler] AIRTABLE_BASE_ID set?:', Boolean(process.env.AIRTABLE_BASE_ID));
 
@@ -48,10 +57,63 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // ----------------------------------
     // 1. Parse & validate webhook payload
     // ----------------------------------
-    const { To, From, Body, _testOverrides = {} } = req.body ?? {};
-    console.log('[step 1] Parsed payload:', { To, From, BodyLength: Body?.length, _testOverrides });
+    // Parse the request body
+    let rawBody = '';
+    let body: Record<string, any> = {};
+    
+    if (req.headers['content-type'] === 'application/x-www-form-urlencoded') {
+      // Collect request body data
+      for await (const chunk of req) {
+        rawBody += chunk.toString();
+      }
+      
+      // Validate Twilio request signature in production
+      if (process.env.NODE_ENV === 'production') {
+        const twilioSignature = req.headers['x-twilio-signature'] as string;
+        const webhookUrl = process.env.WEBHOOK_BASE_URL 
+          ? `${process.env.WEBHOOK_BASE_URL}/api/new-message` 
+          : `https://${req.headers.host}/api/new-message`;
+          
+        console.log('[step 1] 🔐 Validating Twilio signature:', {
+          signature: twilioSignature ? 'present' : 'missing',
+          webhookUrl
+        });
+        
+        // Parse the raw body for validation
+        const params = parse(rawBody);
+        
+        const isValidRequest = validateRequest(
+          process.env.TWILIO_AUTH_TOKEN || '',
+          twilioSignature || '',
+          webhookUrl,
+          params
+        );
+        
+        if (!isValidRequest) {
+          console.error('[step 1] ❌ Invalid Twilio signature');
+          return res.status(403).json({
+            error: 'Invalid signature',
+            message: 'Could not validate that this request came from Twilio'
+          });
+        }
+        
+        console.log('[step 1] ✅ Twilio signature validated successfully');
+      } else {
+        console.log('[step 1] ⚠️ Skipping Twilio signature validation in development');
+      }
+      
+      // Parse the form data
+      body = parse(rawBody) as Record<string, any>;
+    } else {
+      body = req.body || {};
+    }
+    
+    console.log('[step 1] 📨 Parsed Twilio webhook body:', body);
+    
+    const { To, From, Body: messageBody, _testOverrides = {} } = body;
+    console.log('[step 1] Parsed payload:', { To, From, BodyLength: messageBody?.length, _testOverrides });
 
-    if (!To || !From || !Body) {
+    if (!To || !From || !messageBody) {
       console.error('[step 1] Missing required Twilio fields');
       return res.status(400).json({
         error: 'Missing required fields',
@@ -153,7 +215,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const normalize = (txt: string) =>
       txt.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
 
-    const matchedFaq = faqs.find((f) => normalize(Body).includes(normalize(f.question)));
+    const matchedFaq = faqs.find((f) => normalize(messageBody).includes(normalize(f.question)));
     console.log('[step 6] matchedFaq?', Boolean(matchedFaq));
 
     // ----------------------------------
@@ -181,7 +243,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.time('[step 7] openAI');
         try {
           responseMessage = (await Promise.race([
-            generateSmsResponse(Body, faqs, businessName, businessType, additionalInfo),
+            generateSmsResponse(messageBody, faqs, businessName, businessType, additionalInfo),
             new Promise<string>((_, reject) => setTimeout(() => reject('timeout'), 5000)),
           ])) ?? '';
           responseSource = 'openai';

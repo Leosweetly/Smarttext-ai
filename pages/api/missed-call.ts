@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import twilio from 'twilio';
-import { getBusinessByPhoneNumber, logMissedCall, logCallToCallLogs } from '../../lib/airtable';
+import { validateRequest } from 'twilio/lib/webhooks/webhooks';
+import { getBusinessByPhoneNumber, logMissedCall, logCallToCallLogs, getTable } from '../../lib/airtable';
 import { generateMissedCallResponse } from '../../lib/openai';
 import { parse } from 'querystring';
 
@@ -12,6 +13,9 @@ export const config = {
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  console.log('[debug] raw req.headers', req.headers);
+  console.log('[debug] typeof req.body', typeof req.body, req.body);
+  
   // Only allow POST requests
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
@@ -30,13 +34,49 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // Parse the request body
     let body: Record<string, any> = {};
+    let rawBody = '';
 
     if (req.headers['content-type'] === 'application/x-www-form-urlencoded') {
       // Collect request body data
-      let rawBody = '';
       for await (const chunk of req) {
         rawBody += chunk.toString();
       }
+      
+      // Validate Twilio request signature in production
+      if (process.env.NODE_ENV === 'production') {
+        const twilioSignature = req.headers['x-twilio-signature'] as string;
+        const webhookUrl = process.env.WEBHOOK_BASE_URL 
+          ? `${process.env.WEBHOOK_BASE_URL}/api/missed-call` 
+          : `https://${req.headers.host}/api/missed-call`;
+          
+        console.log('🔐 Validating Twilio signature:', {
+          signature: twilioSignature ? 'present' : 'missing',
+          webhookUrl
+        });
+        
+        // Parse the raw body for validation
+        const params = parse(rawBody);
+        
+        const isValidRequest = validateRequest(
+          process.env.TWILIO_AUTH_TOKEN || '',
+          twilioSignature || '',
+          webhookUrl,
+          params
+        );
+        
+        if (!isValidRequest) {
+          console.error('❌ Invalid Twilio signature');
+          return res.status(403).json({
+            error: 'Invalid signature',
+            message: 'Could not validate that this request came from Twilio'
+          });
+        }
+        
+        console.log('✅ Twilio signature validated successfully');
+      } else {
+        console.log('⚠️ Skipping Twilio signature validation in development');
+      }
+      
       // Parse the form data
       body = parse(rawBody) as Record<string, any>;
     } else {
@@ -71,6 +111,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Add the requested logging
     console.log('Missed call from:', From, 'Status:', CallStatus);
     console.log(`📞 Call status update: ${CallStatus} for call from ${From} to ${To} (CallSid: ${CallSid})`);
+    
+    // Log the call to the Calls table in Airtable
+    try {
+      const callsTable = getTable("Calls");
+      const callRecord = await callsTable.create({
+        "From": From,
+        "To": To,
+        "Call Status": CallStatus,
+        "Call SID": CallSid,
+        "Timestamp": new Date().toISOString()
+      });
+      console.log(`✅ Successfully logged call to Calls table, record ID: ${callRecord.id}`);
+    } catch (airtableError) {
+      console.error(`❌ Failed to log call to Calls table:`, airtableError);
+      // Don't throw the error to avoid interrupting the flow
+    }
 
     // Only process missed calls (no-answer, busy, or failed status)
     if (CallStatus !== 'no-answer' && CallStatus !== 'busy' && CallStatus !== 'failed') {
@@ -101,6 +157,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       process.env.TWILIO_AUTH_TOKEN
     );
 
+    // TODO: Enhance SMS auto-reply to missed caller with more personalized messages
+    // based on business type, time of day, and previous interaction history.
+    
     // Create the friendly SMS reply with business name
     const messageBody = `Thanks for calling ${business.name}! We're busy helping other customers at the moment. Were you calling about general information like our hours, website, etc?`;
     console.log(`✅ Using friendly message: "${messageBody}"`);
