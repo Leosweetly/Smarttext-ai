@@ -35,8 +35,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log(`📞 Forwarding call to ${forwardingNumber}`);
       
       // Use Dial with action to forward the call and capture the status
+      // Use absolute URL for production to ensure Twilio can reach our endpoint
+      const baseUrl = process.env.WEBHOOK_BASE_URL || '';
+      const actionUrl = baseUrl ? `${baseUrl}/api/missed-call` : '/api/missed-call';
+      
       const dial = twiml.dial({
-        action: '/api/missed-call', // This will be called after the call ends with To, From, and CallStatus
+        action: actionUrl, // This will be called after the call ends with To, From, and CallStatus
         callerId: To // Show the business number as the caller ID
       });
       
@@ -50,8 +54,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // Add a Dial with action but no number to capture the call status
       // This ensures the action URL gets called with the proper parameters
+      // Use absolute URL for production to ensure Twilio can reach our endpoint
+      const baseUrl = process.env.WEBHOOK_BASE_URL || '';
+      const actionUrl = baseUrl ? `${baseUrl}/api/missed-call` : '/api/missed-call';
+      
       twiml.dial({
-        action: '/api/missed-call'
+        action: actionUrl
       });
     }
 

@@ -33,7 +33,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 const isProduction = process.env.TARGET === 'prod';
 const baseUrl = isProduction 
   ? (process.env.WEBHOOK_BASE_URL || 'https://api.getsmarttext.com')
-  : 'http://localhost:3000';
+  : 'http://localhost:3001'; // Updated to use port 3001 since that's what our dev server is using
 
 // Constants for test business
 const TEST_BUSINESS_PHONE = '+16193721633';

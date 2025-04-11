@@ -21,6 +21,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   console.log('✅ Missed call webhook hit!', {
     body: req.body,
     query: req.query,
+    headers: req.headers,
+    url: req.url,
+    method: req.method,
     timestamp: new Date().toISOString()
   });
 
@@ -41,6 +44,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     console.log('📨 Parsed Twilio webhook body:', body);
+    
+    // Log raw body for debugging
+    console.log('📨 Raw body keys:', Object.keys(body));
+    console.log('📨 Content-Type:', req.headers['content-type']);
 
     // Extract data from Twilio webhook
     const To = body.To as string;
@@ -50,6 +57,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (!To || !From || !CallStatus) {
       console.error('❌ Missing required fields in missed call webhook');
+      console.error('❌ To:', To);
+      console.error('❌ From:', From);
+      console.error('❌ CallStatus:', CallStatus);
+      console.error('❌ All fields:', JSON.stringify(body));
+      
       return res.status(400).json({
         error: 'Missing required fields',
         message: 'The webhook must include To, From, and CallStatus fields'
