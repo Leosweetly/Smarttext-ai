@@ -4,6 +4,7 @@ import { getBusinessByPhoneNumber, logMissedCall, logCallToCallLogs } from '../.
 import { generateMissedCallResponse } from '../../lib/openai';
 import { parse } from 'querystring';
 
+// Before anything, parse the body from Twilio webhook
 export const config = {
   api: {
     bodyParser: false,
@@ -39,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       body = req.body || {};
     }
 
-    console.log('✅ Parsed webhook body:', body);
+    console.log('📨 Parsed Twilio webhook body:', body);
 
     // Extract data from Twilio webhook
     const To = body.To as string;

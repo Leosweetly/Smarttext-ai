@@ -1,7 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import twilio from 'twilio';
 import { getBusinessByPhoneNumber } from '../../../lib/airtable';
-import { sendSms } from '../../../lib/twilio'; // Import from the TypeScript file
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -26,26 +25,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const business = await getBusinessByPhoneNumber(To);
     const businessName = business?.name || 'our business';
-
+    
+    // Get the forwarding number if available
+    const forwardingNumber = business?.customSettings?.forwardingNumber;
+    
     const twiml = new twilio.twiml.VoiceResponse();
-    twiml.say(
-      { voice: 'alice' },
-      `Hey, thanks for calling ${businessName}, we're currently unavailable but we will text you shortly.`
-    );
-    twiml.hangup();
+    
+    if (forwardingNumber) {
+      console.log(`📞 Forwarding call to ${forwardingNumber}`);
+      
+      // Use Dial with action to forward the call and capture the status
+      const dial = twiml.dial({
+        action: '/api/missed-call', // This will be called after the call ends with To, From, and CallStatus
+        callerId: To // Show the business number as the caller ID
+      });
+      
+      dial.number(forwardingNumber);
+    } else {
+      // No forwarding number, so just play a message
+      twiml.say(
+        { voice: 'alice' },
+        `Hey, thanks for calling ${businessName}, we're currently unavailable but we will text you shortly.`
+      );
+      
+      // Add a Dial with action but no number to capture the call status
+      // This ensures the action URL gets called with the proper parameters
+      twiml.dial({
+        action: '/api/missed-call'
+      });
+    }
 
     res.setHeader('Content-Type', 'text/xml');
     res.status(200).send(twiml.toString());
-
-    // ✅ After voice response, send instant SMS to the caller
-    console.log('📲 Sending instant SMS to caller...');
-    await sendSms({
-      to: From,
-      from: To,
-      body: `Thanks for calling ${businessName}! We're busy helping other customers at the moment. Were you calling about general information like our hours, website, etc?`
-    });
-
-    console.log('✅ SMS sent successfully to caller:', From);
 
   } catch (error: any) {
     console.error('❌ Voice handler error:', error.message);
