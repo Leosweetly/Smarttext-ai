@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="alice">Hey, thanks for calling our business. We're currently unavailable, but we'll text you shortly.</Say>
+    <Dial action="/api/missed-call" timeout="20">
+        <Number>+16193721633</Number>
+    </Dial>
+</Response>
