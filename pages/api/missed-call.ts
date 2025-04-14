@@ -58,11 +58,29 @@ export default async function handler(
   } = params;
 
   console.log("📝 Parsed Twilio body:", params);
+  
+  // ---------------------------------------------------------------------------
+  // Fallback to query params if body params are missing
+  // ---------------------------------------------------------------------------
+  const { To: queryTo, From: queryFrom, CallSid: queryCallSid, CallStatus: queryCallStatus, ConnectDuration: queryConnectDuration } = req.query;
+
+  const finalTo = To || (queryTo as string) || "";
+  const finalFrom = From || (queryFrom as string) || "";
+  const finalCallSid = CallSid || (queryCallSid as string) || "";
+  const finalCallStatus = CallStatus || (queryCallStatus as string) || "";
+  const finalConnectDuration = ConnectDuration || (queryConnectDuration as string);
+
+  // Debug logs to confirm
+  console.log("🧩 Final parsed To:", finalTo);
+  console.log("🧩 Final parsed From:", finalFrom);
+  console.log("🧩 Final parsed CallSid:", finalCallSid);
+  console.log("🧩 Final parsed CallStatus:", finalCallStatus);
+  console.log("🧩 Final parsed ConnectDuration:", finalConnectDuration);
 
   // ---------------------------------------------------------------------------
   // Validate required fields
   // ---------------------------------------------------------------------------
-  if (!To || !From || !CallStatus) {
+  if (!finalTo || !finalFrom || !finalCallStatus) {
     return res
       .status(400)
       .json({ error: "Missing required fields: To, From, CallStatus" });
@@ -95,16 +113,16 @@ export default async function handler(
   // ---------------------------------------------------------------------------
   // Ignore calls that were answered/connected
   // ---------------------------------------------------------------------------
-  if (!MISSED_STATUSES.has(CallStatus)) {
+  if (!MISSED_STATUSES.has(finalCallStatus)) {
     return res
       .status(200)
-      .json({ success: true, message: `Status ${CallStatus} ignored` });
+      .json({ success: true, message: `Status ${finalCallStatus} ignored` });
   }
 
   // ---------------------------------------------------------------------------
   // Business lookup
   // ---------------------------------------------------------------------------
-  const business = await getBusinessByPhoneNumberSupabase(To);
+  const business = await getBusinessByPhoneNumberSupabase(finalTo);
   if (!business) {
     return res.status(404).json({ error: "Business not found" });
   }
@@ -121,17 +139,17 @@ export default async function handler(
     try {
       const fromNumber = process.env.TWILIO_PHONE_NUMBER!;
       const ownerMsg = await sendSms({
-        body: `Missed call from ${From}. Status: ${CallStatus}`,
+        body: `Missed call from ${finalFrom}. Status: ${finalCallStatus}`,
         from: fromNumber,
         to: ownerPhone,
-        requestId: `${CallSid}-owner`,
+        requestId: `${finalCallSid}-owner`,
       });
       ownerNotificationSent = true;
 
       await trackOwnerAlert({
         businessId: business.id,
         ownerPhone,
-        customerPhone: From,
+        customerPhone: finalFrom,
         alertType: "missed_call",
         messageContent: ownerMsg.body,
         detectionSource: "twilio_webhook",
@@ -143,9 +161,9 @@ export default async function handler(
       await trackOwnerAlert({
         businessId: business.id,
         ownerPhone,
-        customerPhone: From,
+        customerPhone: finalFrom,
         alertType: "missed_call",
-        messageContent: `Missed call from ${From}. Status: ${CallStatus}`,
+        messageContent: `Missed call from ${finalFrom}. Status: ${finalCallStatus}`,
         detectionSource: "twilio_webhook",
         messageSid: "",
         delivered: false,
@@ -158,12 +176,12 @@ export default async function handler(
   // Log call event to Supabase (non-blocking)
   // ---------------------------------------------------------------------------
   logCallEventSupabase({
-    callSid: CallSid,
-    from: From,
-    to: To,
+    callSid: finalCallSid,
+    from: finalFrom,
+    to: finalTo,
     businessId: business.id,
     eventType: "voice.missed",
-    callStatus: CallStatus,
+    callStatus: finalCallStatus,
     ownerNotified: ownerNotificationSent,
     payload: params,
   }).catch(console.error);
@@ -171,7 +189,7 @@ export default async function handler(
   // ---------------------------------------------------------------------------
   // Auto‑reply SMS (only if call never connected)
   // ---------------------------------------------------------------------------
-  const connected = Number(ConnectDuration ?? 0) > 0;
+  const connected = Number(finalConnectDuration ?? 0) > 0;
   if (!connected) {
     try {
       const body =
@@ -186,34 +204,34 @@ export default async function handler(
       const sms = await sendSms({
         body,
         from: twilioNumber,
-        to: From,
-        requestId: CallSid,
+        to: finalFrom,
+        requestId: finalCallSid,
       });
 
       await trackSmsEvent({
         messageSid: sms.sid,
         from: twilioNumber,
-        to: From,
+        to: finalFrom,
         businessId: business.id,
         status: sms.status ?? "sent",
         errorCode: null,
         errorMessage: null,
-        requestId: CallSid,
+        requestId: finalCallSid,
         bodyLength: body.length,
-        payload: { type: "missed_call_auto_reply", callSid: CallSid },
+        payload: { type: "missed_call_auto_reply", callSid: finalCallSid },
       });
     } catch (err: any) {
       await trackSmsEvent({
         messageSid: "",
         from: process.env.TWILIO_PHONE_NUMBER!,
-        to: From,
+        to: finalFrom,
         businessId: business.id,
         status: "failed",
         errorCode: err?.code?.toString() ?? "unknown",
         errorMessage: err?.message ?? "Unknown",
-        requestId: CallSid,
+        requestId: finalCallSid,
         bodyLength: 0,
-        payload: { type: "missed_call_auto_reply", callSid: CallSid, error: err },
+        payload: { type: "missed_call_auto_reply", callSid: finalCallSid, error: err },
       });
     }
   }
@@ -223,8 +241,8 @@ export default async function handler(
   // ---------------------------------------------------------------------------
   return res.status(200).json({
     success: true,
-    callSid: CallSid,
-    callStatus: CallStatus,
+    callSid: finalCallSid,
+    callStatus: finalCallStatus,
     ownerNotificationSent,
   });
 }
