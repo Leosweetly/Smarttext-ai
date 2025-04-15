@@ -7,10 +7,14 @@
  * Usage: node scripts/test-missed-call-direct.js
  */
 
-const dotenv = require('dotenv');
-const path = require('path');
-const axios = require('axios');
-const FormData = require('form-data');
+import dotenv from 'dotenv';
+import path from 'path';
+import axios from 'axios';
+import FormData from 'form-data';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables from .env.local
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
@@ -23,11 +27,12 @@ async function testMissedCall() {
   try {
     console.log(`\n🔍 Testing missed call from ${CALLER_NUMBER} to ${TWILIO_NUMBER}...`);
     
-    // Create form data for the request (Twilio sends form-encoded data)
-    const formData = new FormData();
+    // Create URL-encoded form data for the request (Twilio sends URL-encoded data)
+    const formData = new URLSearchParams();
     formData.append('From', CALLER_NUMBER);
     formData.append('To', TWILIO_NUMBER);
     formData.append('CallStatus', 'no-answer'); // Simulate a no-answer call status
+    formData.append('CallSid', 'CA' + Math.random().toString(36).substring(2, 15)); // Generate a random CallSid
     
     // Get the API base URL from environment or use default
     const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000'; // Updated to use port 3000
@@ -40,9 +45,9 @@ async function testMissedCall() {
     console.log(`  CallStatus: no-answer`);
     
     // Make the request to the missed-call endpoint
-    const response = await axios.post(missedCallUrl, formData, {
+    const response = await axios.post(missedCallUrl, formData.toString(), {
       headers: {
-        ...formData.getHeaders()
+        'Content-Type': 'application/x-www-form-urlencoded'
       }
     });
     
@@ -52,8 +57,8 @@ async function testMissedCall() {
       console.log(`Message that will be sent to ${CALLER_NUMBER}:`);
       console.log(`"${response.data.message}"`);
       console.log('\nCheck your phone for the text message. It should arrive shortly.');
-      console.log('\n✅ The call should also be logged to Airtable "Call Logs" table for analytics.');
-      console.log('Check your Airtable base to verify the new record was created.');
+      console.log('\n✅ The call should also be logged to Supabase "call_events" table for analytics.');
+      console.log('Check your Supabase database to verify the new record was created.');
     } else {
       console.error('\n❌ Missed call test failed:');
       console.error(response.data);
