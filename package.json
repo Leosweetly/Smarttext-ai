@@ -34,11 +34,20 @@
     "cypress:headless": "cypress run",
     "e2e": "start-server-and-test dev http://localhost:3000 cypress",
     "e2e:headless": "start-server-and-test dev http://localhost:3000 cypress:headless",
-    "verify:cypress": "node scripts/verify-cypress.js"
+    "verify:cypress": "node scripts/verify-cypress.js",
+    "monitoring:test": "node scripts/test-monitoring.js",
+    "monitoring:test:sms": "node scripts/test-monitoring.js --test-type sms",
+    "monitoring:test:openai": "node scripts/test-monitoring.js --test-type openai",
+    "monitoring:test:owner-alert": "node scripts/test-monitoring.js --test-type owner-alert",
+    "monitoring:update-stats": "node scripts/update-daily-stats.js",
+    "monitoring:reset-openai": "node scripts/update-daily-stats.js --reset-openai",
+    "monitoring:cleanup": "node scripts/cleanup-monitoring-data.js",
+    "monitoring:cleanup:dry-run": "node scripts/cleanup-monitoring-data.js --dry-run"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "4.0.3",
     "@sentry/nextjs": "^7.80.0",
+    "@supabase/supabase-js": "^2.49.4",
     "airtable": "^0.12.2",
     "axios": "^1.6.2",
     "dotenv": "^16.3.1",
@@ -46,13 +55,15 @@
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.12.6",
     "micro": "^10.0.1",
-    "next": "14.0.4",
+    "next": "^14.2.28",
     "openai": "^4.20.1",
+    "quick-lru": "^7.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "stripe": "^14.5.0",
     "swr": "^2.3.3",
     "twilio": "^4.19.0",
+    "uuid": "^9.0.1",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
@@ -73,6 +84,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "ngrok": "^5.0.0-beta.2",
     "node-fetch": "^3.3.2",
+    "node-mocks-http": "^1.16.2",
     "start-server-and-test": "^2.0.3",
     "typescript": "^5.8.2",
     "wait-on": "^8.0.3"

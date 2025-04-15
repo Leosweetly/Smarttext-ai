@@ -8,9 +8,13 @@
  * and a specified forwarding number.
  */
 
-const dotenv = require('dotenv');
-const path = require('path');
-const Airtable = require('airtable');
+import dotenv from 'dotenv';
+import path from 'path';
+import Airtable from 'airtable';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables from .env.local
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
@@ -32,13 +36,13 @@ async function addTestBusiness() {
     
     // Create a test business with the SmartText AI phone number and forwarding number
     const testBusiness = {
-      "Name": "SmartText AI Test Business",
+      "Business Name": "SmartText AI Test Business",
       "Business Type": "salon",
-      "Phone Number": "+18186518560", // SmartText AI Twilio number
-      "Forwarding Phone Number": "+12125551234", // Your phone number for testing
+      "Phone Number": "+16193721633", // Test business phone number
+      "Twilio Number": "+16193721633", // Test business phone number
       "Address": "123 Test St, Test City, CA 12345",
       "Subscription Tier": "pro", // Using pro tier for better auto-text features
-      "Hours": JSON.stringify({
+      "Hours JSON": JSON.stringify({
         Monday: '9:00 AM - 5:00 PM',
         Tuesday: '9:00 AM - 5:00 PM',
         Wednesday: '9:00 AM - 5:00 PM',
@@ -47,33 +51,26 @@ async function addTestBusiness() {
         Saturday: '10:00 AM - 3:00 PM',
         Sunday: 'Closed'
       }),
-      "FAQs": JSON.stringify([
+      "FAQs JSON": JSON.stringify([
         {
           question: 'What services do you offer?',
-          defaultAnswer: 'We offer a variety of salon services including haircuts, coloring, styling, and more.'
+          answer: 'We offer a variety of salon services including haircuts, coloring, styling, and more.'
         },
         {
           question: 'How can I book an appointment?',
-          defaultAnswer: 'You can book an appointment by calling us or using our online booking system.'
+          answer: 'You can book an appointment by calling us or using our online booking system.'
         }
       ]),
       "Custom Settings": JSON.stringify({
+        forwardingNumber: "+16193721633", // Using the same number for testing
         additionalInfo: 'This is a test business for SmartText AI auto-text functionality.'
       })
     };
     
     // Add the business to Airtable
-    const createdRecord = await new Promise((resolve, reject) => {
-      base('Businesses').create(testBusiness, (err, record) => {
-        if (err) {
-          console.error('Error creating record:', err);
-          return reject(err);
-        }
-        resolve(record);
-      });
-    });
+    const createdRecord = await base('Businesses').create(testBusiness);
     
-    console.log('SmartText AI test business created successfully:', createdRecord.getId());
+    console.log('SmartText AI test business created successfully:', createdRecord.id);
     console.log('Business data:', createdRecord.fields);
     
     return createdRecord;

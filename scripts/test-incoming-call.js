@@ -16,18 +16,27 @@
  * Twilio payload and display the response.
  */
 
-import axios from 'axios';
+// Load dotenv before any other imports to ensure environment variables are available
 import dotenv from 'dotenv';
 import path from 'path';
-import chalk from 'chalk';
 import { fileURLToPath } from 'url';
-import { getTable } from '../lib/data/airtable-client.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables
+// Load environment variables from .env.local
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+
+// Now that environment variables are loaded, import other dependencies
+import axios from 'axios';
+import chalk from 'chalk';
+import { getTable } from '../lib/data/airtable-client.js';
+
+// Verify environment variables are loaded
+console.log('Environment variables loaded:');
+console.log('AIRTABLE_PAT:', process.env.AIRTABLE_PAT ? '✅ Present' : '❌ Missing');
+console.log('AIRTABLE_BASE_ID:', process.env.AIRTABLE_BASE_ID ? '✅ Present' : '❌ Missing');
+console.log('TWILIO_PHONE_NUMBER:', process.env.TWILIO_PHONE_NUMBER ? '✅ Present' : '❌ Missing');
 
 // Determine target environment (local or production)
 const isProduction = process.env.TARGET === 'prod';
@@ -71,7 +80,7 @@ async function verifyTestBusiness() {
     
     // Check if the business already exists
     const records = await table.select({
-      filterByFormula: `{Phone Number} = "${businessPhone}"`,
+      filterByFormula: `{Twilio Number} = "${businessPhone}"`,
       maxRecords: 1
     }).firstPage();
     
@@ -86,11 +95,13 @@ async function verifyTestBusiness() {
     
     const newBusiness = await table.create({
       'Business Name': TEST_BUSINESS_NAME,
-      'Phone Number': businessPhone,
-      'Test Record': true,
-      'Business Type': 'restaurant',
-      'Auto-Reply Enabled': true,
-      'FAQs': JSON.stringify([
+      'Public Number': businessPhone,
+      'Twilio Number': businessPhone,
+      'Forwarding Number': businessPhone,
+      'Custom Settings': JSON.stringify({
+        forwardingNumber: businessPhone
+      }),
+      'FAQs JSON': JSON.stringify([
         { question: "What are your hours?", answer: "We're open 9am-5pm Monday to Friday." },
         { question: "Do you deliver?", answer: "Yes, we offer delivery within 5 miles." }
       ])
@@ -107,25 +118,26 @@ async function verifyTestBusiness() {
 }
 
 async function testIncomingCall() {
-  // First verify the test business exists
-  await verifyTestBusiness();
+  // Skip Airtable verification for now
+  console.log(chalk.yellow('⚠️ Skipping Airtable verification for this test'));
   
   const endpoint = `${baseUrl}/api/twilio/voice`;
   const callSid = generateCallSid();
   
-  // Prepare the webhook payload
-  const payload = {
-    To: businessPhone,
-    From: callerPhone,
-    CallSid: callSid,
-    Direction: 'inbound',
-    CallStatus: 'ringing',
-    // Add test mode parameters to bypass business lookup
-    _testOverrides: {
-      testMode: true
-    },
-    testMode: true
-  };
+    // Prepare the webhook payload
+    const payload = {
+      To: businessPhone,
+      From: callerPhone,
+      CallSid: callSid,
+      Direction: 'inbound',
+      CallStatus: 'ringing',
+      // Add test mode parameters to bypass business lookup
+      testMode: true,
+      _testOverrides: JSON.stringify({
+        testMode: true,
+        forwardingNumber: '+16193721633' // Add the forwarding number for testing
+      })
+    };
   
   console.log(chalk.blue('🔍 Test Incoming Call Webhook'));
   console.log(chalk.gray('-----------------------------------'));

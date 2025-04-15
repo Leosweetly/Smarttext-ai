@@ -6,6 +6,7 @@
  */
 
 import twilio from 'twilio';
+import { trackSmsEvent } from './monitoring';
 
 // In-memory store for SMS rate limiting
 // Maps phone numbers to timestamps of last SMS sent
@@ -117,6 +118,22 @@ export async function sendSms({
     // Log success
     console.log(`${logPrefix} Successfully sent SMS, message SID: ${message.sid}`);
     
+    // Track the successful SMS event
+    trackSmsEvent({
+      messageSid: message.sid,
+      from,
+      to,
+      businessId: extractBusinessId(from, to),
+      status: message.status || 'sent',
+      errorCode: null,
+      errorMessage: null,
+      requestId,
+      bodyLength: body.length,
+      payload: { message }
+    }).catch(err => {
+      console.error(`${logPrefix} Error tracking SMS event:`, err);
+    });
+    
     return message;
   } catch (error: any) {
     // Log the error
@@ -130,6 +147,22 @@ export async function sendSms({
     } else if (error.code === 20003) {
       console.error('[sendSms] Error 20003: Authentication Error - Your Twilio credentials are invalid.');
     }
+    
+    // Track the failed SMS event
+    trackSmsEvent({
+      messageSid: '',
+      from,
+      to,
+      businessId: extractBusinessId(from, to),
+      status: 'failed',
+      errorCode: error.code?.toString() || 'unknown',
+      errorMessage: error.message || 'Unknown error',
+      requestId,
+      bodyLength: body.length,
+      payload: { error: { code: error.code, message: error.message } }
+    }).catch(err => {
+      console.error(`[sendSms] Error tracking failed SMS event:`, err);
+    });
     
     // Re-throw the error for the caller to handle
     throw error;
@@ -162,4 +195,17 @@ export function getSmsRateLimitTimeRemaining(phoneNumber: string): number {
 export function clearSmsRateLimit(phoneNumber: string): void {
   smsTimestamps.delete(phoneNumber);
   console.log(`⏱️ Cleared SMS rate-limiting for ${phoneNumber}`);
+}
+
+/**
+ * Helper function to extract business ID from phone numbers
+ * This is a best-effort approach - in real usage, the business ID should be passed explicitly
+ * @param {string} from - From phone number
+ * @param {string} to - To phone number
+ * @returns {string|null} - Business ID if it can be determined, null otherwise
+ */
+function extractBusinessId(from: string, to: string): string | null {
+  // In most cases, the 'from' number is the Twilio number associated with a business
+  // This is a placeholder - in production, you would look up the business ID from the phone number
+  return null;
 }

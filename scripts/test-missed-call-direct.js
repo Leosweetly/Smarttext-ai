@@ -30,7 +30,7 @@ async function testMissedCall() {
     formData.append('CallStatus', 'no-answer'); // Simulate a no-answer call status
     
     // Get the API base URL from environment or use default
-    const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3001'; // Updated to use port 3001
+    const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000'; // Updated to use port 3000
     const missedCallUrl = `${apiBaseUrl}/api/missed-call`;
     
     console.log(`Sending request to: ${missedCallUrl}`);

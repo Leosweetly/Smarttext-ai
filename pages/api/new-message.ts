@@ -1,9 +1,26 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { validateRequest } from 'twilio/lib/webhooks/webhooks';
 import { parse } from 'querystring';
-import { getTable } from '../../lib/data/airtable-client';
-import { generateSmsResponse } from '../../lib/openai';
+import { getBusinessByPhoneNumberSupabase } from '../../lib/supabase';
+import { generateSmsResponse, classifyMessageIntent } from '../../lib/openai';
 import { sendSms } from '../../lib/twilio';
+import { trackOwnerAlert } from '../../lib/monitoring';
+
+// TypeScript interfaces for business data
+interface Business {
+  id: string;
+  name: string;
+  business_type: string;
+  public_phone: string;
+  twilio_phone: string;
+  owner_phone?: string;  // For sending alerts
+  custom_alert_keywords?: string[];  // Optional array of alert keywords
+  custom_settings?: Record<string, any>;
+  hours_json?: Record<string, string>;
+  faqs_json?: FAQ[];
+}
+
+// Duplicate interface removed
 
 // Disable Next.js body parser to handle raw request body
 export const config = {
@@ -32,10 +49,83 @@ interface FAQ {
   answer: string;
 }
 
-// Minimal interface for an Airtable record used in this handler
-interface BusinessRecord {
-  id: string;
-  get: (field: string) => any;
+// Helper function to check if a message matches any custom alert keywords
+function matchesCustomKeywords(message: string, keywords?: string[]): boolean {
+  if (!keywords || keywords.length === 0) return false;
+  
+  const normalizedMessage = message.toLowerCase();
+  return keywords.some(keyword => 
+    normalizedMessage.includes(keyword.toLowerCase())
+  );
+}
+
+// Helper function to send an alert to the business owner
+async function sendOwnerAlert(
+  business: Business, 
+  customerMessage: string, 
+  customerPhone: string, 
+  detectionSource: string
+): Promise<boolean> {
+  try {
+    if (!business.owner_phone) {
+      console.log('⚠️ Cannot send owner alert: No owner_phone specified for business');
+      return false;
+    }
+    
+    const alertMessage = 
+      `URGENT: New message from ${customerPhone}\n` +
+      `Business: ${business.name}\n` +
+      `Message: "${customerMessage}"\n` +
+      `(Detected via: ${detectionSource})`;
+    
+    // Generate a request ID for tracking
+    const requestId = Math.random().toString(36).substring(2, 10);
+      
+    const message = await sendSms({
+      body: alertMessage,
+      from: business.twilio_phone,
+      to: business.owner_phone,
+      requestId,
+      bypassRateLimit: true
+    });
+    
+    // Track the owner alert
+    await trackOwnerAlert({
+      businessId: business.id,
+      ownerPhone: business.owner_phone,
+      customerPhone,
+      alertType: 'urgent_message',
+      messageContent: customerMessage,
+      detectionSource,
+      messageSid: message.sid,
+      delivered: true,
+      errorMessage: null
+    }).catch(err => {
+      console.error('Error tracking owner alert:', err);
+    });
+    
+    console.log(`✅ Owner alert sent to ${business.owner_phone} (${detectionSource})`);
+    return true;
+  } catch (error) {
+    console.error('Error sending owner alert:', error);
+    
+    // Track the failed owner alert
+    await trackOwnerAlert({
+      businessId: business.id,
+      ownerPhone: business.owner_phone || '',
+      customerPhone,
+      alertType: 'urgent_message',
+      messageContent: customerMessage,
+      detectionSource,
+      messageSid: '',
+      delivered: false,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error'
+    }).catch(err => {
+      console.error('Error tracking failed owner alert:', err);
+    });
+    
+    return false;
+  }
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -135,56 +225,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // ----------------------------------
-    // 3. Fetch (or mock) business record
+    // 3. Fetch (or mock) business record from Supabase
     // ----------------------------------
     console.time('[step 3] businessLookup');
-    let business: BusinessRecord;
+    let business: Business;
     if (req.body.testMode === true || req.query.testMode === 'true') {
       console.info('[step 3] Using MOCK business record (testMode flag)');
       business = {
         id: 'test-business-id',
-        get: (field: string) => {
-          switch (field) {
-            case 'Business Name':
-              return 'Test Business';
-            case 'Business Type':
-              return 'restaurant';
-            case 'Auto-Reply Enabled':
-              return true;
-            case 'FAQs':
-              return JSON.stringify([
-                { question: 'What are your hours?', answer: "We're open 9am‑5pm Mon‑Fri." },
-                { question: 'Do you deliver?', answer: 'Yes, within 5 miles.' },
-              ]);
-            default:
-              return null;
-          }
-        },
+        name: 'Test Business',
+        business_type: 'restaurant',
+        public_phone: To,
+        twilio_phone: To,
+        owner_phone: '+15551234567',
+        custom_alert_keywords: ['urgent', 'emergency', 'asap', 'help'],
+        custom_settings: { auto_reply_enabled: true },
+        faqs_json: [
+          { question: 'What are your hours?', answer: "We're open 9am‑5pm Mon‑Fri." },
+          { question: 'Do you deliver?', answer: 'Yes, within 5 miles.' },
+        ]
       };
     } else {
-      const table = getTable('Businesses');
-      const records = await table
-        .select({ filterByFormula: `{Phone Number} = "${To}"`, maxRecords: 1 })
-        .firstPage();
+      const supabaseBusiness = await getBusinessByPhoneNumberSupabase(To);
 
-      if (records.length === 0) {
+      if (!supabaseBusiness) {
         console.warn('[step 3] No business found for number', To);
         console.timeEnd('[step 3] businessLookup');
         return res.status(404).json({ error: 'Business not found' });
       }
-      business = records[0] as BusinessRecord;
+      business = supabaseBusiness as Business;
     }
     console.timeEnd('[step 3] businessLookup');
 
     const businessId = business.id;
-    const businessName = (business.get('Business Name') as string) || 'this business';
+    const businessName = business.name || 'this business';
     console.log('[step 3] Using business', { businessName, businessId });
 
     // ----------------------------------
     // 4. Respect auto‑reply toggle
     // ----------------------------------
-    if (business.get('Auto-Reply Enabled') === false) {
-      console.info('[step 4] Auto‑reply disabled via Airtable field');
+    if (business.custom_settings?.auto_reply_enabled === false) {
+      console.info('[step 4] Auto‑reply disabled via Supabase field');
       return res.status(200).json({ success: true, message: 'Auto‑reply disabled' });
     }
 
@@ -192,20 +273,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 5. Parse FAQs safely
     // ----------------------------------
     console.time('[step 5] parseFaqs');
-    const parseFaqs = (): FAQ[] => {
-      const faqsField = _testOverrides.malformedFaqs ? '{malformed json}' : business.get('FAQs');
-      try {
-        if (!faqsField) return [];
-        if (Array.isArray(faqsField)) return faqsField as FAQ[];
-        const parsed = JSON.parse(faqsField);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (err) {
-        console.error('[step 5] FAQ JSON parse error:', err);
-        return [];
-      }
-    };
-
-    const faqs = parseFaqs();
+    const faqs: FAQ[] = business.faqs_json || [];
     console.timeEnd('[step 5] parseFaqs');
     console.log('[step 5] FAQ count:', faqs.length);
 
@@ -219,14 +287,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('[step 6] matchedFaq?', Boolean(matchedFaq));
 
     // ----------------------------------
-    // 7. Build the response text
+    // 7. Check for urgent message
     // ----------------------------------
-    const businessType = business.get('Business Type') || 'local';
+    console.time('[step 7] urgencyCheck');
+    let isUrgent = false;
+    let urgencySource = '';
+
+    // First check custom keywords (case insensitive)
+    if (matchesCustomKeywords(messageBody, business.custom_alert_keywords)) {
+      isUrgent = true;
+      urgencySource = 'custom_keywords';
+      console.log('[step 7] ⚠️ Urgent message detected via custom keywords');
+    } 
+    // Then check using GPT intent classification
+    else if (process.env.ENABLE_OPENAI_FALLBACK !== 'false' && !disableOpenAI) {
+      try {
+        const isUrgentByGPT = await classifyMessageIntent(messageBody, business.business_type);
+        if (isUrgentByGPT) {
+          isUrgent = true;
+          urgencySource = 'gpt_classification';
+          console.log('[step 7] ⚠️ Urgent message detected via GPT classification');
+        }
+      } catch (err) {
+        console.error('[step 7] Error during GPT urgency classification:', err);
+      }
+    }
+
+    // Send owner alert if message is urgent
+    if (isUrgent && business.owner_phone) {
+      console.log('[step 7] 📱 Sending owner alert...');
+      await sendOwnerAlert(business, messageBody, From, urgencySource);
+    }
+    console.timeEnd('[step 7] urgencyCheck');
+
+    // ----------------------------------
+    // 8. Build the response text
+    // ----------------------------------
+    const businessType = business.business_type || 'local';
     const additionalInfo = {
-      hours: business.get('Business Hours'),
-      location: business.get('Location'),
-      website: business.get('Website'),
-      orderingLink: business.get('Online Ordering Link'),
+      hours: business.hours_json ? JSON.stringify(business.hours_json) : null,
+      location: business.custom_settings?.location,
+      website: business.custom_settings?.website,
+      orderingLink: business.custom_settings?.ordering_link,
     };
 
     let responseMessage = '';
@@ -235,59 +337,59 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (matchedFaq) {
       responseMessage = matchedFaq.answer;
       responseSource = 'faq';
-      console.log('[step 7] Responding with FAQ answer');
+      console.log('[step 8] Responding with FAQ answer');
     } else {
       const openAiEnabled = process.env.ENABLE_OPENAI_FALLBACK !== 'false' && !disableOpenAI;
-      console.log('[step 7] openAiEnabled?', openAiEnabled);
+      console.log('[step 8] openAiEnabled?', openAiEnabled);
       if (openAiEnabled) {
-        console.time('[step 7] openAI');
+        console.time('[step 8] openAI');
         try {
           responseMessage = (await Promise.race([
             generateSmsResponse(messageBody, faqs, businessName, businessType, additionalInfo),
             new Promise<string>((_, reject) => setTimeout(() => reject('timeout'), 5000)),
           ])) ?? '';
           responseSource = 'openai';
-          console.timeEnd('[step 7] openAI');
+          console.timeEnd('[step 8] openAI');
         } catch (err) {
-          console.error('[step 7] OpenAI error or timeout:', err);
-          console.timeEnd('[step 7] openAI');
+          console.error('[step 8] OpenAI error or timeout:', err);
+          console.timeEnd('[step 8] openAI');
         }
       }
 
       if (!responseMessage) {
-        const customFallback = business.get('Custom Fallback Message');
+        const customFallback = business.custom_settings?.fallback_message;
         if (customFallback) {
           responseMessage = customFallback;
           responseSource = 'custom_fallback';
-          console.log('[step 7] Using custom fallback message');
+          console.log('[step 8] Using custom fallback message');
         } else {
           responseMessage =
             "Sorry, we couldn't understand your question. Please call us directly.";
           responseSource = 'default_fallback';
-          console.log('[step 7] Using default fallback message');
+          console.log('[step 8] Using default fallback message');
         }
       }
     }
 
     // ----------------------------------
-    // 8. Send SMS (mock if test mode)
+    // 9. Send SMS (mock if test mode)
     // ----------------------------------
     const requestId = Math.random().toString(36).substring(2, 10);
     const start = Date.now();
     let messageSid = '';
 
-    console.log('[step 8] Prepared response', { responseSource, responseMessage });
+    console.log('[step 9] Prepared response', { responseSource, responseMessage });
 
     if (isTestMode(req) && (/^\+1619/.test(From) || From === '+16193721633')) {
       messageSid = `mock-${requestId}`;
-      console.info(`[step 8][${requestId}] Mock SMS (test mode) sent to`, From);
+      console.info(`[step 9][${requestId}] Mock SMS (test mode) sent to`, From);
     } else {
       try {
         const message = await sendSms({ body: responseMessage, from: To, to: From, requestId });
         messageSid = message.sid;
-        console.info(`[step 8][${requestId}] Twilio SMS sent, SID:`, messageSid);
+        console.info(`[step 9][${requestId}] Twilio SMS sent, SID:`, messageSid);
       } catch (twilioErr: any) {
-        console.error(`[step 8][${requestId}] Twilio error:`, twilioErr.message);
+        console.error(`[step 9][${requestId}] Twilio error:`, twilioErr.message);
         if (isTestMode(req)) {
           messageSid = `mock-error-${requestId}`;
         } else {
@@ -306,12 +408,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const processingTime = Date.now() - start;
-    console.log('[step 8] Processing time ms:', processingTime);
+    console.log('[step 9] Processing time ms:', processingTime);
 
     // ----------------------------------
-    // 9. Success response
+    // 10. Success response
     // ----------------------------------
-    console.log('[step 9] Returning success JSON');
+    console.log('[step 10] Returning success JSON');
     return res.status(200).json({
       success: true,
       requestId,

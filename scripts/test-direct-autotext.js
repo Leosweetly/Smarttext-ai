@@ -21,6 +21,8 @@ dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 const TWILIO_SID = process.env.TWILIO_SID;
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
 const TWILIO_TEST_NUMBER = process.env.TWILIO_TEST_NUMBER || '+18186518560'; // The number to test
+const FORWARDING_NUMBER = '+16193721633'; // The forwarding number to test
+const BUSINESS_NAME = 'SmartText AI Test Business';
 
 // Check if Twilio credentials are set
 if (!TWILIO_SID || !TWILIO_AUTH_TOKEN) {
@@ -40,10 +42,30 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.post('/voice', (req, res) => {
   console.log('📞 Received voice webhook:', req.body);
   
+  const from = req.body.From;
+  const to = req.body.To;
+  
   // Generate TwiML to handle the call
   const twiml = new twilio.twiml.VoiceResponse();
-  twiml.say('Thank you for calling our test number. This is a test of the auto-text system.');
-  twiml.hangup();
+  
+  // Always greet the caller first
+  twiml.say(
+    { voice: 'alice' },
+    `Hey, thanks for calling ${BUSINESS_NAME}. We're currently unavailable, but we'll text you shortly.`
+  );
+  
+  // Add the Dial element with the forwarding number
+  const dial = twiml.dial({
+    action: '/missed-call', // This will trigger our missed-call endpoint
+    method: 'POST',
+    callerId: to, // Show the business number as the caller ID
+    timeout: 20 // 20 seconds timeout as specified
+  });
+  
+  dial.number(FORWARDING_NUMBER);
+  
+  console.log('📝 Generated TwiML with forwarding to:', FORWARDING_NUMBER);
+  console.log(twiml.toString());
   
   res.type('text/xml');
   res.send(twiml.toString());
@@ -56,8 +78,9 @@ app.post('/missed-call', async (req, res) => {
   const from = req.body.From;
   const to = req.body.To;
   const callStatus = req.body.CallStatus;
+  const callSid = req.body.CallSid || 'unknown';
   
-  console.log(`Missed call from ${from} to ${to} (Status: ${callStatus})`);
+  console.log(`Missed call from ${from} to ${to} (Status: ${callStatus}, SID: ${callSid})`);
   
   // Only send auto-text for relevant statuses
   const relevantStatuses = ['no-answer', 'busy', 'failed', 'completed'];
@@ -69,7 +92,7 @@ app.post('/missed-call', async (req, res) => {
   try {
     // Send a simple auto-text message
     const message = await client.messages.create({
-      body: `Thanks for calling our test number! This is an automated response to your missed call. (Status: ${callStatus})`,
+      body: `Thanks for calling ${BUSINESS_NAME}! We missed you, but reply here and we'll get right back to you.`,
       from: to, // Use the called number as the sender
       to: from // Send to the caller
     });
@@ -121,6 +144,7 @@ async function startServer() {
       
       console.log('\n📱 Ready to test! Call the number and hang up to trigger the auto-text:');
       console.log(TWILIO_TEST_NUMBER);
+      console.log(`The call will be forwarded to: ${FORWARDING_NUMBER}`);
       
       // Keep the server running until Ctrl+C
       console.log('\n⏳ Press Ctrl+C to stop the server...');
