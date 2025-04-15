@@ -90,6 +90,32 @@ dirsToRemove.forEach(dirPath => {
 // We're using .vercelignore instead of .nowignore
 console.log('✅ Using .vercelignore file instead of .nowignore');
 
+// Check lib directory exists before build
+const libDir = path.join(process.cwd(), 'lib');
+console.log('🔍 Checking lib directory contents before build:');
+if (fs.existsSync(libDir)) {
+  const libFiles = fs.readdirSync(libDir);
+  console.log('📁 lib directory files:', libFiles);
+  
+  // Specifically check for supabase.js and monitoring.js
+  const supabasePath = path.join(libDir, 'supabase.js');
+  const monitoringPath = path.join(libDir, 'monitoring.js');
+  
+  if (fs.existsSync(supabasePath)) {
+    console.log('✅ supabase.js exists before build');
+  } else {
+    console.log('❌ supabase.js does not exist before build');
+  }
+  
+  if (fs.existsSync(monitoringPath)) {
+    console.log('✅ monitoring.js exists before build');
+  } else {
+    console.log('❌ monitoring.js does not exist before build');
+  }
+} else {
+  console.log('❌ lib directory does not exist');
+}
+
 console.log('✅ Custom build script completed');
 
 // Check API directory contents after build
@@ -156,4 +182,29 @@ if (fs.existsSync(apiDir)) {
       console.error('❌ Error restoring API directory and files:', error.message);
     }
   }
+}
+
+// Check lib directory after build
+console.log('🔍 Checking lib directory contents after build:');
+if (fs.existsSync(libDir)) {
+  const libFiles = fs.readdirSync(libDir);
+  console.log('📁 lib directory files after build:', libFiles);
+  
+  // Specifically check for supabase.js and monitoring.js
+  const supabasePath = path.join(libDir, 'supabase.js');
+  const monitoringPath = path.join(libDir, 'monitoring.js');
+  
+  if (fs.existsSync(supabasePath)) {
+    console.log('✅ supabase.js exists after build');
+  } else {
+    console.log('❌ supabase.js does not exist after build');
+  }
+  
+  if (fs.existsSync(monitoringPath)) {
+    console.log('✅ monitoring.js exists after build');
+  } else {
+    console.log('❌ monitoring.js does not exist after build');
+  }
+} else {
+  console.log('❌ lib directory does not exist after build');
 }

@@ -10,6 +10,10 @@ pages/api/auth
 # Explicitly include important API routes
 !pages/api/airtable-sync.ts
 
+# Explicitly include lib directory
+!lib/
+!lib/**/*
+
 # Ignore development files
 .git
 .github

@@ -55,6 +55,9 @@ const nextConfig = {
       // Log all files being processed to help debug
       console.log('🔍 Webpack is processing files. API routes should include:');
       console.log('✅ pages/api/airtable-sync.ts - This should NOT be excluded');
+      console.log('🔍 Webpack is processing files. Lib files should include:');
+      console.log('✅ lib/supabase.js - This should NOT be excluded');
+      console.log('✅ lib/monitoring.js - This should NOT be excluded');
     }
     return config;
   },
