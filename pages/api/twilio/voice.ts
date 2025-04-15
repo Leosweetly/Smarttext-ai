@@ -14,6 +14,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { parse } from 'querystring';
 import twilio, { validateRequest } from 'twilio';
+// Import the functions we need directly
 import { sendSms } from '../../../lib/twilio';
 import { getBusinessByPhoneNumberSupabase } from '../../../lib/supabase';
 

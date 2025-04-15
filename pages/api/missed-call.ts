@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import twilio, { validateRequest } from 'twilio';
 import getRawBody from 'raw-body';
 
+// Import the functions we need directly
 import { getBusinessByPhoneNumberSupabase, logCallEventSupabase } from '../../lib/supabase';
 import { generateMissedCallResponse } from '../../lib/openai';
 import { sendSms } from '../../lib/twilio';
