@@ -3,10 +3,10 @@ import twilio, { validateRequest } from 'twilio';
 import getRawBody from 'raw-body';
 
 // Import the functions we need directly
-import { getBusinessByPhoneNumberSupabase, logCallEventSupabase } from '../../lib/supabase';
-import { generateMissedCallResponse } from '../../lib/openai';
+import { getBusinessByPhoneNumberSupabase, logCallEventSupabase } from '../../lib/supabase.js';
+import { generateMissedCallResponse } from '../../lib/openai.js';
 import { sendSms } from '../../lib/twilio';
-import { trackSmsEvent, trackOwnerAlert } from '../../lib/monitoring';
+import { trackSmsEvent, trackOwnerAlert } from '../../lib/monitoring.js';
 
 export const config = {
   api: { bodyParser: false },
@@ -40,6 +40,9 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  // Log webhook hit for debugging
+  console.log("📞 Missed call webhook hit");
+  
   // ---------------------------------------------------------------------------
   // Guard: only POST
   // ---------------------------------------------------------------------------
@@ -264,6 +267,8 @@ export default async function handler(
         requestId: finalCallSid,
       });
 
+      console.log("📤 Sent auto-reply to", finalFrom);
+      
       await trackSmsEvent({
         messageSid: sms.sid,
         from: twilioNumber,

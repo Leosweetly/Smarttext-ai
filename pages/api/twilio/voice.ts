@@ -16,7 +16,7 @@ import { parse } from 'querystring';
 import twilio, { validateRequest } from 'twilio';
 // Import the functions we need directly
 import { sendSms } from '../../../lib/twilio';
-import { getBusinessByPhoneNumberSupabase } from '../../../lib/supabase';
+import { getBusinessByPhoneNumberSupabase } from '../../../lib/supabase.js';
 
 export const config = {
   api: { bodyParser: false } // we need the raw stream for signature validation
@@ -43,9 +43,7 @@ export default async function handler(
     return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 
-  console.log('✅ Twilio voice webhook hit!', {
-    timestamp: new Date().toISOString()
-  });
+  console.log('📞 Voice handler hit');
 
   try {
     // -----------------------------------------------------------------
@@ -117,6 +115,10 @@ export default async function handler(
     // -----------------------------------------------------------------
     const business = await getBusinessByPhoneNumberSupabase(toNumber);
     const businessName = business?.name || 'our business';
+    
+    if (business) {
+      console.log(`✅ Business found: ${business.name} (${business.id})`);
+    }
 
     // Check for test override forwarding number
     let testOverrides: { forwardingNumber?: string; testMode?: boolean } = {};
@@ -212,7 +214,7 @@ export default async function handler(
         body: messageBody,
         requestId: CallSid
       });
-      console.log(`💬 Auto‑text sent to caller: "${messageBody}"`);
+      console.log(`📤 Sent auto-reply to ${fromNumber}`);
     } catch (smsErr: any) {
       console.error('⚠️ Failed to send auto‑text:', smsErr.message);
     }
