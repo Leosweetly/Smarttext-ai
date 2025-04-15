@@ -150,21 +150,42 @@ export default async function handler(
 
     // Always greet the caller first
     twiml.say(
-      { voice: 'woman' },
-      `Hey, thanks for calling ${businessName}. We're currently unavailable, but we'll text you shortly.`
+      { voice: 'alice' },
+      `Hey, thanks for calling ${businessName}, we're currently unavailable but we will text you shortly.`
     );
     
     if (forwardingNumber) {
+      // Make sure we include all required parameters in the action URL
+      // This ensures the missed-call endpoint has all the data it needs
+      // IMPORTANT: Use absolute URL to avoid issues with relative paths
+      const actionUrl = `${baseUrl}/api/missed-call?From=${encodeURIComponent(fromNumber)}&To=${encodeURIComponent(toNumber)}&CallSid=${encodeURIComponent(CallSid)}&CallStatus=completed`;
+      
+      // Force the action URL to be absolute by using the full baseUrl
       const dial = twiml.dial({
-        action: `${baseUrl}/api/missed-call?From=${encodeURIComponent(fromNumber)}&To=${encodeURIComponent(toNumber)}&CallSid=${encodeURIComponent(CallSid)}`,
+        action: actionUrl,
         method: 'POST',
         callerId: toNumber,
         timeout: 20
       });
       dial.number(forwardingNumber);
+      
+      console.log(`🔗 Dial action URL set to: ${actionUrl}`);
+      
+      // Verify the TwiML output to ensure the action URL is set correctly
+      const dialXml = dial.toString();
+      console.log(`🔍 Dial XML: ${dialXml}`);
     } else {
+      // If no forwarding number, we still need to trigger the missed-call endpoint
+      // Add a redirect to ensure the missed-call flow is triggered
+      // IMPORTANT: Use absolute URL to avoid issues with relative paths
+      const redirectUrl = `${baseUrl}/api/missed-call?From=${encodeURIComponent(fromNumber)}&To=${encodeURIComponent(toNumber)}&CallSid=${encodeURIComponent(CallSid)}&CallStatus=no-answer`;
+      
       twiml.pause({ length: 1 });
-      twiml.hangup();
+      twiml.redirect({
+        method: 'POST'
+      }, redirectUrl);
+      
+      console.log(`🔄 Redirect URL set to: ${redirectUrl}`);
     }
 
     // -----------------------------------------------------------------
@@ -200,7 +221,6 @@ export default async function handler(
     // -----------------------------------------------------------------
     const twimlString = twiml.toString();
     console.log(`📄 Final TwiML response:`, twimlString);
-    console.log(`🔗 Dial action URL: ${baseUrl}/api/missed-call?From=${encodeURIComponent(fromNumber)}&To=${encodeURIComponent(toNumber)}&CallSid=${encodeURIComponent(CallSid)}`);
     
     res.setHeader('Content-Type', 'text/xml');
     return res.status(200).send(twimlString);

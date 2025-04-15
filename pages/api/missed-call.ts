@@ -21,6 +21,12 @@ type TwilioWebhookParams = {
   CallSid: string;
   CallStatus: string;
   ConnectDuration?: string;
+  // Additional Twilio parameters that might be present in callbacks
+  DialCallStatus?: string;
+  Called?: string;
+  Caller?: string;
+  ParentCallSid?: string;
+  [key: string]: any; // Allow any other properties that Twilio might send
 };
 
 const MISSED_STATUSES = new Set(["no-answer", "busy", "failed"]);
@@ -42,12 +48,24 @@ export default async function handler(
   }
 
   // ---------------------------------------------------------------------------
+  // Enhanced debugging for troubleshooting
+  // ---------------------------------------------------------------------------
+  console.log("🔍 Request headers:", req.headers);
+  console.log("🔍 Request URL:", req.url);
+  console.log("🔍 Request query:", req.query);
+  
+  // ---------------------------------------------------------------------------
   // Parse x-www-form-urlencoded body
   // ---------------------------------------------------------------------------
   const rawBody = await getRawBody(req, { limit: "1mb" });
+  console.log("🔍 Raw body:", rawBody.toString());
+  
   const params = Object.fromEntries(
     new URLSearchParams(rawBody.toString())
   ) as Partial<TwilioWebhookParams>;
+
+  // Hydrate req.body so any code that tries to access it directly will work
+  (req as any).body = params;
 
   const {
     To = "",
@@ -64,10 +82,28 @@ export default async function handler(
   // ---------------------------------------------------------------------------
   const { To: queryTo, From: queryFrom, CallSid: queryCallSid, CallStatus: queryCallStatus, ConnectDuration: queryConnectDuration } = req.query;
 
-  const finalTo = To || (queryTo as string) || "";
-  const finalFrom = From || (queryFrom as string) || "";
-  const finalCallSid = CallSid || (queryCallSid as string) || "";
-  const finalCallStatus = CallStatus || (queryCallStatus as string) || "";
+  // Extract values from Twilio's standard callback parameters if present
+  let callbackTo = "";
+  let callbackFrom = "";
+  let callbackCallSid = "";
+  let callbackCallStatus = "";
+  
+  // Check for DialCallStatus which is sent by Twilio when a Dial action completes
+  if (params.DialCallStatus) {
+    callbackCallStatus = params.DialCallStatus as string;
+    console.log("🔔 Found DialCallStatus:", callbackCallStatus);
+  }
+  
+  // Check for standard Twilio callback parameters
+  if (params.Called) callbackTo = params.Called as string;
+  if (params.Caller) callbackFrom = params.Caller as string;
+  if (params.ParentCallSid) callbackCallSid = params.ParentCallSid as string;
+  
+  // Use all possible sources for the final values
+  const finalTo = To || callbackTo || (queryTo as string) || "";
+  const finalFrom = From || callbackFrom || (queryFrom as string) || "";
+  const finalCallSid = CallSid || callbackCallSid || (queryCallSid as string) || "";
+  const finalCallStatus = CallStatus || callbackCallStatus || (queryCallStatus as string) || "no-answer"; // Default to no-answer
   const finalConnectDuration = ConnectDuration || (queryConnectDuration as string);
 
   // Debug logs to confirm
@@ -78,12 +114,31 @@ export default async function handler(
   console.log("🧩 Final parsed ConnectDuration:", finalConnectDuration);
 
   // ---------------------------------------------------------------------------
-  // Validate required fields
+  // Validate required fields (with more detailed error messages)
   // ---------------------------------------------------------------------------
-  if (!finalTo || !finalFrom || !finalCallStatus) {
+  const missingFields: string[] = [];
+  if (!finalTo) missingFields.push("To");
+  if (!finalFrom) missingFields.push("From");
+  if (!finalCallStatus) missingFields.push("CallStatus");
+  
+  if (missingFields.length > 0) {
+    const errorMessage = `Missing required fields: ${missingFields.join(", ")}`;
+    console.error("❌ Validation error:", errorMessage);
+    console.error("❌ Request details:", {
+      url: req.url,
+      method: req.method,
+      headers: req.headers,
+      query: req.query,
+      body: params
+    });
+    
     return res
       .status(400)
-      .json({ error: "Missing required fields: To, From, CallStatus" });
+      .json({ 
+        error: "Missing required fields",
+        message: `The webhook must include To, From, and CallStatus fields`,
+        missingFields
+      });
   }
 
   // ---------------------------------------------------------------------------
