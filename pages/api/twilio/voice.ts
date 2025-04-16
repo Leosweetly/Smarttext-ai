@@ -114,12 +114,17 @@ export default async function handler(
     // -----------------------------------------------------------------
     // 4. Business lookup & forwarding target
     // -----------------------------------------------------------------
+    console.log(`🔍 Looking up business for phone number: ${toNumber}`);
     const business = await getBusinessByPhoneNumberSupabase(toNumber);
-    const businessName = business?.name || 'our business';
     
     if (business) {
       console.log(`✅ Business found: ${business.name} (${business.id})`);
+    } else {
+      console.log(`❌ No business found for phone number: ${toNumber}`);
     }
+    
+    const businessName = business?.name || 'our business';
+    console.log(`🏢 Using business name: ${businessName}`);
 
     // Check for test override forwarding number
     let testOverrides: { forwardingNumber?: string; testMode?: boolean } = {};
@@ -198,6 +203,7 @@ export default async function handler(
     try {
       // Use the TWILIO_PHONE_NUMBER environment variable instead of toNumber
       const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER || toNumber;
+      console.log(`📱 Using Twilio phone number for SMS: ${twilioPhoneNumber}`);
       
       // Use custom auto-reply message if available, otherwise use the standard message
       let messageBody = `Thanks for calling ${businessName}! We missed you, but reply here and we'll get right back to you.`;
@@ -205,19 +211,27 @@ export default async function handler(
       // Check if the business has a custom auto-reply message
       if (business?.custom_settings?.autoReplyMessage) {
         messageBody = business.custom_settings.autoReplyMessage;
+        console.log(`📝 Using custom_settings.autoReplyMessage: ${messageBody}`);
       } else if (business?.customSettings?.autoReplyMessage) {
         messageBody = business.customSettings.autoReplyMessage;
+        console.log(`📝 Using customSettings.autoReplyMessage: ${messageBody}`);
+      } else {
+        console.log(`📝 Using default message: ${messageBody}`);
       }
       
-      await sendSms({
+      console.log(`🚀 Attempting to send SMS from ${twilioPhoneNumber} to ${fromNumber}`);
+      const smsResult = await sendSms({
         to: fromNumber,
         from: twilioPhoneNumber, // Use the Twilio phone number from environment
         body: messageBody,
-        requestId: CallSid
+        requestId: CallSid,
+        bypassRateLimit: true // Bypass rate limiting to ensure the SMS is sent
       });
-      console.log(`📤 Sent auto-reply to ${fromNumber}`);
+      
+      console.log(`📤 Sent auto-reply to ${fromNumber}`, smsResult);
     } catch (smsErr: any) {
       console.error('⚠️ Failed to send auto‑text:', smsErr.message);
+      console.error('⚠️ SMS Error details:', smsErr);
     }
 
     // -----------------------------------------------------------------

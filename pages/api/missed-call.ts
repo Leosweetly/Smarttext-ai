@@ -249,25 +249,51 @@ export default async function handler(
   // Auto‑reply SMS (only if call never connected)
   // ---------------------------------------------------------------------------
   const connected = Number(finalConnectDuration ?? 0) > 0;
+  console.log(`🔄 Call connection status: ${connected ? 'Connected' : 'Not connected'} (Duration: ${finalConnectDuration || '0'})`);
+  
   if (!connected) {
+    console.log(`📱 Preparing to send auto-reply SMS to ${finalFrom}`);
     try {
-      const body =
-        (await generateMissedCallResponse(
+      // Try to generate a custom response first
+      let body;
+      try {
+        console.log(`🤖 Attempting to generate custom response for ${business.name} (tier: ${business.subscription_tier || 'basic'})`);
+        body = await generateMissedCallResponse(
           business,
           business.subscription_tier ?? "basic"
-        )) ||
-        business.customSettings?.autoReplyMessage ||
-        `Hi! Thanks for calling ${business.name}. We missed you but will ring back ASAP.`;
+        );
+        console.log(`✅ Generated custom response: "${body}"`);
+      } catch (genErr) {
+        console.error(`❌ Error generating custom response:`, genErr);
+        body = null;
+      }
+      
+      // Fall back to custom message or default if generation fails
+      if (!body) {
+        if (business.customSettings?.autoReplyMessage) {
+          body = business.customSettings.autoReplyMessage;
+          console.log(`📝 Using customSettings.autoReplyMessage: "${body}"`);
+        } else if (business.custom_settings?.autoReplyMessage) {
+          body = business.custom_settings.autoReplyMessage;
+          console.log(`📝 Using custom_settings.autoReplyMessage: "${body}"`);
+        } else {
+          body = `Hi! Thanks for calling ${business.name}. We missed you but will ring back ASAP.`;
+          console.log(`📝 Using default message: "${body}"`);
+        }
+      }
 
       const twilioNumber = process.env.TWILIO_PHONE_NUMBER!;
+      console.log(`🚀 Sending SMS from ${twilioNumber} to ${finalFrom}`);
+      
       const sms = await sendSms({
         body,
         from: twilioNumber,
         to: finalFrom,
         requestId: finalCallSid,
+        bypassRateLimit: true // Bypass rate limiting to ensure the SMS is sent
       });
 
-      console.log("📤 Sent auto-reply to", finalFrom);
+      console.log(`📤 Sent auto-reply to ${finalFrom}`, sms);
       
       await trackSmsEvent({
         messageSid: sms.sid,
@@ -282,6 +308,9 @@ export default async function handler(
         payload: { type: "missed_call_auto_reply", callSid: finalCallSid },
       });
     } catch (err: any) {
+      console.error(`❌ Error sending auto-reply SMS:`, err);
+      console.error(`❌ Error details:`, JSON.stringify(err, null, 2));
+      
       await trackSmsEvent({
         messageSid: "",
         from: process.env.TWILIO_PHONE_NUMBER!,
@@ -295,6 +324,8 @@ export default async function handler(
         payload: { type: "missed_call_auto_reply", callSid: finalCallSid, error: err },
       });
     }
+  } else {
+    console.log(`⏭️ Skipping auto-reply SMS because call was connected (Duration: ${finalConnectDuration})`);
   }
 
   // ---------------------------------------------------------------------------

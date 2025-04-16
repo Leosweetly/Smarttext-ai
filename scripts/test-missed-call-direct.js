@@ -35,7 +35,7 @@ async function testMissedCall() {
     formData.append('CallSid', 'CA' + Math.random().toString(36).substring(2, 15)); // Generate a random CallSid
     
     // Get the API base URL from environment or use default
-    const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000'; // Updated to use port 3000
+    const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3001'; // Updated to use port 3001
     const missedCallUrl = `${apiBaseUrl}/api/missed-call`;
     
     console.log(`Sending request to: ${missedCallUrl}`);
