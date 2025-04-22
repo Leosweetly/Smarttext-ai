@@ -199,6 +199,47 @@ export async function trackSmsEvent(eventData) {
 export async function trackOwnerAlert(alertData) {
   console.log(\`[MOCK] Tracking owner alert:\`, alertData);
   return { id: 'mock-alert-id', ...alertData };
+}
+
+/**
+ * Track OpenAI API usage
+ * @param {Object} usageData - Usage data
+ * @returns {Promise<Object|null>} - The created usage record or null if error
+ */
+export async function trackOpenAIUsage(usageData) {
+  console.log(\`[MOCK] Tracking OpenAI usage:\`, usageData);
+  return { id: 'mock-openai-usage-id', ...usageData };
+}
+
+/**
+ * Check if a business has exceeded its daily OpenAI usage limit
+ * @param {string|null} businessId - Business ID
+ * @param {number} tokenLimit - Token limit
+ * @returns {Promise<boolean>} - True if limit exceeded, false otherwise
+ */
+export async function checkOpenAIUsageLimit(businessId, tokenLimit = 100000) {
+  console.log(\`[MOCK] Checking OpenAI usage limit for business \${businessId} with limit \${tokenLimit}\`);
+  return false; // Always return false in mock implementation
+}
+
+/**
+ * Update daily stats for a business
+ * @param {string} businessId - Business ID
+ * @param {string} date - Date in YYYY-MM-DD format
+ * @returns {Promise<boolean>} - True if successful, false otherwise
+ */
+export async function updateDailyStats(businessId, date = null) {
+  console.log(\`[MOCK] Updating daily stats for business \${businessId} on date \${date || 'today'}\`);
+  return true;
+}
+
+/**
+ * Reset daily OpenAI usage counters for all businesses
+ * @returns {Promise<boolean>} - True if successful, false otherwise
+ */
+export async function resetDailyOpenAIUsage() {
+  console.log('[MOCK] Resetting daily OpenAI usage for all businesses');
+  return true;
 }`;
   
   try {
@@ -376,6 +417,47 @@ export async function trackSmsEvent(eventData) {
 export async function trackOwnerAlert(alertData) {
   console.log(\`[MOCK] Tracking owner alert:\`, alertData);
   return { id: 'mock-alert-id', ...alertData };
+}
+
+/**
+ * Track OpenAI API usage
+ * @param {Object} usageData - Usage data
+ * @returns {Promise<Object|null>} - The created usage record or null if error
+ */
+export async function trackOpenAIUsage(usageData) {
+  console.log(\`[MOCK] Tracking OpenAI usage:\`, usageData);
+  return { id: 'mock-openai-usage-id', ...usageData };
+}
+
+/**
+ * Check if a business has exceeded its daily OpenAI usage limit
+ * @param {string|null} businessId - Business ID
+ * @param {number} tokenLimit - Token limit
+ * @returns {Promise<boolean>} - True if limit exceeded, false otherwise
+ */
+export async function checkOpenAIUsageLimit(businessId, tokenLimit = 100000) {
+  console.log(\`[MOCK] Checking OpenAI usage limit for business \${businessId} with limit \${tokenLimit}\`);
+  return false; // Always return false in mock implementation
+}
+
+/**
+ * Update daily stats for a business
+ * @param {string} businessId - Business ID
+ * @param {string} date - Date in YYYY-MM-DD format
+ * @returns {Promise<boolean>} - True if successful, false otherwise
+ */
+export async function updateDailyStats(businessId, date = null) {
+  console.log(\`[MOCK] Updating daily stats for business \${businessId} on date \${date || 'today'}\`);
+  return true;
+}
+
+/**
+ * Reset daily OpenAI usage counters for all businesses
+ * @returns {Promise<boolean>} - True if successful, false otherwise
+ */
+export async function resetDailyOpenAIUsage() {
+  console.log('[MOCK] Resetting daily OpenAI usage for all businesses');
+  return true;
 }`;
     
     try {
@@ -468,6 +550,47 @@ export async function trackSmsEvent(eventData) {
 export async function trackOwnerAlert(alertData) {
   console.log(\`[MOCK] Tracking owner alert:\`, alertData);
   return { id: 'mock-alert-id', ...alertData };
+}
+
+/**
+ * Track OpenAI API usage
+ * @param {Object} usageData - Usage data
+ * @returns {Promise<Object|null>} - The created usage record or null if error
+ */
+export async function trackOpenAIUsage(usageData) {
+  console.log(\`[MOCK] Tracking OpenAI usage:\`, usageData);
+  return { id: 'mock-openai-usage-id', ...usageData };
+}
+
+/**
+ * Check if a business has exceeded its daily OpenAI usage limit
+ * @param {string|null} businessId - Business ID
+ * @param {number} tokenLimit - Token limit
+ * @returns {Promise<boolean>} - True if limit exceeded, false otherwise
+ */
+export async function checkOpenAIUsageLimit(businessId, tokenLimit = 100000) {
+  console.log(\`[MOCK] Checking OpenAI usage limit for business \${businessId} with limit \${tokenLimit}\`);
+  return false; // Always return false in mock implementation
+}
+
+/**
+ * Update daily stats for a business
+ * @param {string} businessId - Business ID
+ * @param {string} date - Date in YYYY-MM-DD format
+ * @returns {Promise<boolean>} - True if successful, false otherwise
+ */
+export async function updateDailyStats(businessId, date = null) {
+  console.log(\`[MOCK] Updating daily stats for business \${businessId} on date \${date || 'today'}\`);
+  return true;
+}
+
+/**
+ * Reset daily OpenAI usage counters for all businesses
+ * @returns {Promise<boolean>} - True if successful, false otherwise
+ */
+export async function resetDailyOpenAIUsage() {
+  console.log('[MOCK] Resetting daily OpenAI usage for all businesses');
+  return true;
 }`;
     
     fs.writeFileSync(monitoringPath, monitoringContent);

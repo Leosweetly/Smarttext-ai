@@ -39,7 +39,9 @@ if (fs.existsSync(monitoringPath)) {
   // Verify content
   const monitoringContent = fs.readFileSync(monitoringPath, 'utf8');
   if (monitoringContent.includes('trackSmsEvent') && 
-      monitoringContent.includes('trackOwnerAlert')) {
+      monitoringContent.includes('trackOwnerAlert') &&
+      monitoringContent.includes('trackOpenAIUsage') &&
+      monitoringContent.includes('checkOpenAIUsageLimit')) {
     console.log('✅ lib/monitoring.js contains required functions');
   } else {
     console.error('❌ lib/monitoring.js is missing required functions');
