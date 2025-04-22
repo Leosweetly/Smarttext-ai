@@ -43,6 +43,15 @@ Created a new file `lib/api-compat.js` that provides a unified interface for fun
 
 This approach ensures that the API files can always import the required functions, even if the actual implementation files are missing during the build process.
 
+### 2. Added OpenAI-Related Functions to Mock Implementation
+
+Added the following OpenAI-related functions to the mock implementation of `monitoring.js`:
+
+- `trackOpenAIUsage`: Tracks OpenAI API usage data
+- `checkOpenAIUsageLimit`: Checks if a business has exceeded its OpenAI usage limit
+
+These functions are required by `lib/openai.js` and were causing build errors when not provided in the mock implementation.
+
 ### 2. Updated API Files
 
 Modified the API files to use the compatibility layer:
