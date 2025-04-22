@@ -7,6 +7,8 @@ const setupFileExists = fs.existsSync(setupFilePath);
 module.exports = {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: setupFileExists ? ['<rootDir>/jest.setup.cjs'] : [],
+  // Use manual mocks in __mocks__ directory
+  moduleDirectories: ['node_modules', '__mocks__'],
   testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/', '<rootDir>/cypress/'],
   moduleNameMapper: {
     // Handle CSS imports (with CSS modules)

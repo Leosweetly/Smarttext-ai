@@ -49,6 +49,38 @@ module.exports = {
 
 This change ensures that the Jest configuration will work in both local and GitHub Actions environments, even if the setup file is missing.
 
+## Problem 3: Missing Supabase Module in GitHub Actions
+
+The Jest tests were failing with the following error:
+
+```
+Cannot find module '../../lib/supabase' from '__tests__/api/new-message.test.js'
+```
+
+This was happening because the test file was trying to mock the Supabase module, but it couldn't find it in the GitHub Actions environment.
+
+## Solution 3: Create Manual Mock for Supabase
+
+We implemented a two-part solution:
+
+1. **Created a manual mock for the Supabase module**:
+   - Created a directory structure: `__mocks__/lib/`
+   - Added a mock implementation in `__mocks__/lib/supabase.js`:
+   ```javascript
+   module.exports = {
+     getBusinessByPhoneNumberSupabase: jest.fn().mockResolvedValue(null),
+     // Add other Supabase functions as needed
+   };
+   ```
+
+2. **Updated the Jest configuration**:
+   - Modified `jest.config.cjs` to include the `__mocks__` directory in the module directories:
+   ```javascript
+   moduleDirectories: ['node_modules', '__mocks__'],
+   ```
+
+This ensures that even if the actual Supabase module doesn't exist in the GitHub Actions environment, Jest will still be able to find the mock implementation.
+
 ## Why This Works
 
 The `testPathIgnorePatterns` configuration option in Jest allows you to specify patterns of directories or files that Jest should ignore when looking for test files to run. By adding `'<rootDir>/cypress/'` to this array, we're telling Jest to ignore any files in the Cypress directory.

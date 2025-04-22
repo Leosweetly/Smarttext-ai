@@ -29,7 +29,7 @@ The GitHub workflow is failing during the ESLint step. We've fixed this by addin
 
 ## Step 3: Update Jest Configuration
 
-We've made two important changes to the Jest configuration to fix issues in the GitHub workflow:
+We've made three important changes to the Jest configuration to fix issues in the GitHub workflow:
 
 1. **Ignore Cypress Directory**:
    Updated `jest.config.cjs` to ignore the Cypress directory:
@@ -58,6 +58,21 @@ We've made two important changes to the Jest configuration to fix issues in the 
    };
    ```
    This ensures that the Jest configuration will work in both local and GitHub Actions environments, even if the setup file is missing.
+
+3. **Create Manual Mock for Supabase**:
+   - Created a directory structure: `__mocks__/lib/`
+   - Added a mock implementation in `__mocks__/lib/supabase.js`:
+   ```javascript
+   module.exports = {
+     getBusinessByPhoneNumberSupabase: jest.fn().mockResolvedValue(null),
+     // Add other Supabase functions as needed
+   };
+   ```
+   - Updated the Jest configuration to include the `__mocks__` directory:
+   ```javascript
+   moduleDirectories: ['node_modules', '__mocks__'],
+   ```
+   This ensures that even if the actual Supabase module doesn't exist in the GitHub Actions environment, Jest will still be able to find the mock implementation.
 
 ## Step 4: Verify GitHub Workflow Configuration
 

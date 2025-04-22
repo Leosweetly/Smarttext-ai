@@ -20,7 +20,8 @@ We've made the following changes to unblock the GitHub workflow:
    - Modified `jest.config.cjs` to ignore the Cypress directory
    - Added `'<rootDir>/cypress/'` to the `testPathIgnorePatterns` array
    - Added conditional loading of the setup file to handle missing `jest.setup.cjs` in GitHub Actions
-   - This prevents Jest from attempting to run Cypress tests and handles missing setup files
+   - Created a manual mock for the Supabase module to handle missing module in GitHub Actions
+   - This prevents Jest from attempting to run Cypress tests and handles missing files
 
 4. **Updated Cypress tests to handle missing Airtable credentials**
    - Added `skipIfNoAirtable()` helper function in `cypress/support/commands.js`
