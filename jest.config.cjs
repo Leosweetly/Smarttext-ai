@@ -1,6 +1,12 @@
+// Check if jest.setup.cjs exists
+const fs = require('fs');
+const path = require('path');
+const setupFilePath = path.resolve(__dirname, 'jest.setup.cjs');
+const setupFileExists = fs.existsSync(setupFilePath);
+
 module.exports = {
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.cjs'],
+  setupFilesAfterEnv: setupFileExists ? ['<rootDir>/jest.setup.cjs'] : [],
   testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/', '<rootDir>/cypress/'],
   moduleNameMapper: {
     // Handle CSS imports (with CSS modules)

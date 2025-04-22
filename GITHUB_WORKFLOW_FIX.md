@@ -29,9 +29,10 @@ The GitHub workflow is failing during the ESLint step. We've fixed this by addin
 
 ## Step 3: Update Jest Configuration
 
-Jest was attempting to run Cypress tests, which was causing issues in the GitHub workflow. We've fixed this by updating the Jest configuration:
+We've made two important changes to the Jest configuration to fix issues in the GitHub workflow:
 
-1. Updated `jest.config.cjs` to ignore the Cypress directory:
+1. **Ignore Cypress Directory**:
+   Updated `jest.config.cjs` to ignore the Cypress directory:
    ```javascript
    // Before
    testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
@@ -39,8 +40,24 @@ Jest was attempting to run Cypress tests, which was causing issues in the GitHub
    // After
    testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/', '<rootDir>/cypress/'],
    ```
+   This ensures that Jest will not attempt to run any tests located in the Cypress directory.
 
-2. This ensures that Jest will not attempt to run any tests located in the Cypress directory.
+2. **Handle Missing Setup File**:
+   Modified the Jest configuration to check if the setup file exists before including it:
+   ```javascript
+   // Check if jest.setup.cjs exists
+   const fs = require('fs');
+   const path = require('path');
+   const setupFilePath = path.resolve(__dirname, 'jest.setup.cjs');
+   const setupFileExists = fs.existsSync(setupFilePath);
+
+   module.exports = {
+     testEnvironment: 'jsdom',
+     setupFilesAfterEnv: setupFileExists ? ['<rootDir>/jest.setup.cjs'] : [],
+     // ... rest of the configuration
+   };
+   ```
+   This ensures that the Jest configuration will work in both local and GitHub Actions environments, even if the setup file is missing.
 
 ## Step 4: Verify GitHub Workflow Configuration
 
