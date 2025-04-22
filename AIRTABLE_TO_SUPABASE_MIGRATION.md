@@ -16,12 +16,17 @@ We've made the following changes to unblock the GitHub workflow:
    - Used the existing `eslint-config-next` package
    - This resolves the ESLint errors in the GitHub workflow
 
-3. **Updated Cypress tests to handle missing Airtable credentials**
+3. **Updated Jest configuration**
+   - Modified `jest.config.cjs` to ignore the Cypress directory
+   - Added `'<rootDir>/cypress/'` to the `testPathIgnorePatterns` array
+   - This prevents Jest from attempting to run Cypress tests
+
+4. **Updated Cypress tests to handle missing Airtable credentials**
    - Added `skipIfNoAirtable()` helper function in `cypress/support/commands.js`
    - Updated tests in `cypress/e2e/api.spec.js` to use this helper function
    - Tests will now be skipped gracefully when Airtable credentials are not available
 
-4. **Updated Jest tests to handle missing Airtable credentials**
+5. **Updated Jest tests to handle missing Airtable credentials**
    - Added conditional skipping in `__tests__/api/new-message.test.js`
    - Tests will now be skipped gracefully when Airtable credentials are not available
 

@@ -27,7 +27,22 @@ The GitHub workflow is failing during the ESLint step. We've fixed this by addin
 
 2. This configuration uses the Next.js ESLint plugin that's already installed as a dev dependency in your project.
 
-## Step 3: Verify GitHub Workflow Configuration
+## Step 3: Update Jest Configuration
+
+Jest was attempting to run Cypress tests, which was causing issues in the GitHub workflow. We've fixed this by updating the Jest configuration:
+
+1. Updated `jest.config.cjs` to ignore the Cypress directory:
+   ```javascript
+   // Before
+   testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
+
+   // After
+   testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/', '<rootDir>/cypress/'],
+   ```
+
+2. This ensures that Jest will not attempt to run any tests located in the Cypress directory.
+
+## Step 4: Verify GitHub Workflow Configuration
 
 Your `.github/workflows/main.yml` is already set up to use these environment variables:
 
@@ -56,7 +71,7 @@ And it has the conditional logic to skip Cypress tests:
     }
 ```
 
-## Step 4: Trigger the Workflow
+## Step 5: Trigger the Workflow
 
 After adding the secrets, trigger a new workflow run with an empty commit:
 
@@ -65,7 +80,7 @@ git commit --allow-empty -m "Trigger CI with dummy Airtable credentials"
 git push
 ```
 
-## Step 5: Monitor the Workflow Run
+## Step 6: Monitor the Workflow Run
 
 1. Go to the "Actions" tab in your GitHub repository
 2. Watch the latest workflow run
