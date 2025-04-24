@@ -5,14 +5,14 @@
  * that handles incoming SMS messages and sends automated replies.
  */
 
-// Check if Airtable credentials are available
-const hasAirtableCredentials = process.env.AIRTABLE_PAT && process.env.AIRTABLE_BASE_ID;
-const skipAirtableTests = !hasAirtableCredentials;
+// Check if Supabase credentials are available
+const hasSupabaseCredentials = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY;
+const skipSupabaseTests = !hasSupabaseCredentials;
 
-if (skipAirtableTests) {
-  console.log('⚠️ Skipping Airtable-dependent tests because Airtable credentials are not available');
-  console.log(`AIRTABLE_PAT available: ${!!process.env.AIRTABLE_PAT}`);
-  console.log(`AIRTABLE_BASE_ID available: ${!!process.env.AIRTABLE_BASE_ID}`);
+if (skipSupabaseTests) {
+  console.log('⚠️ Skipping Supabase-dependent tests because Supabase credentials are not available');
+  console.log(`SUPABASE_URL available: ${!!process.env.SUPABASE_URL}`);
+  console.log(`SUPABASE_SERVICE_ROLE_KEY available: ${!!process.env.SUPABASE_SERVICE_ROLE_KEY}`);
 }
 
 const { createMocks } = require('node-mocks-http');
@@ -20,7 +20,6 @@ const handler = require('../../pages/api/new-message').default;
 const openaiModule = require('../../lib/openai');
 const twilioModule = require('../../lib/twilio');
 const supabaseModule = require('../../lib/supabase');
-const airtableModule = require('../../lib/airtable');
 
 // Mock the OpenAI module
 jest.mock('../../lib/openai', () => ({
@@ -44,11 +43,6 @@ jest.mock('../../lib/twilio', () => ({
 // Mock the Supabase module
 jest.mock('../../lib/supabase', () => ({
   getBusinessByPhoneNumberSupabase: jest.fn().mockResolvedValue(null)
-}));
-
-// Mock the Airtable module
-jest.mock('../../lib/airtable', () => ({
-  getBusinessByPhoneNumber: jest.fn().mockResolvedValue(null)
 }));
 
 // Mock the Twilio webhooks validation
@@ -98,8 +92,8 @@ describe('/api/new-message', () => {
   });
 
   test('returns 404 if business is not found', async () => {
-    // Skip this test if Airtable credentials are not available
-    if (skipAirtableTests) {
+    // Skip this test if Supabase credentials are not available
+    if (skipSupabaseTests) {
       console.log('⚠️ Skipping test: returns 404 if business is not found');
       return;
     }
@@ -124,8 +118,8 @@ describe('/api/new-message', () => {
   });
 
   test('respects auto-reply toggle when disabled', async () => {
-    // Skip this test if Airtable credentials are not available
-    if (skipAirtableTests) {
+    // Skip this test if Supabase credentials are not available
+    if (skipSupabaseTests) {
       console.log('⚠️ Skipping test: respects auto-reply toggle when disabled');
       return;
     }
@@ -158,8 +152,8 @@ describe('/api/new-message', () => {
   });
 
   test('matches FAQ and sends correct response', async () => {
-    // Skip this test if Airtable credentials are not available
-    if (skipAirtableTests) {
+    // Skip this test if Supabase credentials are not available
+    if (skipSupabaseTests) {
       console.log('⚠️ Skipping test: matches FAQ and sends correct response');
       return;
     }
@@ -196,8 +190,8 @@ describe('/api/new-message', () => {
   });
 
   test('uses OpenAI when no FAQ matches and returns AI response', async () => {
-    // Skip this test if Airtable credentials are not available
-    if (skipAirtableTests) {
+    // Skip this test if Supabase credentials are not available
+    if (skipSupabaseTests) {
       console.log('⚠️ Skipping test: uses OpenAI when no FAQ matches and returns AI response');
       return;
     }
@@ -232,8 +226,8 @@ describe('/api/new-message', () => {
   });
 
   test('falls back to default message when OpenAI fails', async () => {
-    // Skip this test if Airtable credentials are not available
-    if (skipAirtableTests) {
+    // Skip this test if Supabase credentials are not available
+    if (skipSupabaseTests) {
       console.log('⚠️ Skipping test: falls back to default message when OpenAI fails');
       return;
     }
@@ -270,8 +264,8 @@ describe('/api/new-message', () => {
   // New tests for the alerting system
 
   test('sends owner alert when message contains custom alert keyword', async () => {
-    // Skip this test if Airtable credentials are not available
-    if (skipAirtableTests) {
+    // Skip this test if Supabase credentials are not available
+    if (skipSupabaseTests) {
       console.log('⚠️ Skipping test: sends owner alert when message contains custom alert keyword');
       return;
     }
@@ -320,8 +314,8 @@ describe('/api/new-message', () => {
   });
 
   test('sends owner alert when OpenAI classifies message as urgent', async () => {
-    // Skip this test if Airtable credentials are not available
-    if (skipAirtableTests) {
+    // Skip this test if Supabase credentials are not available
+    if (skipSupabaseTests) {
       console.log('⚠️ Skipping test: sends owner alert when OpenAI classifies message as urgent');
       return;
     }
@@ -374,8 +368,8 @@ describe('/api/new-message', () => {
   });
 
   test('does not send owner alert for non-urgent messages', async () => {
-    // Skip this test if Airtable credentials are not available
-    if (skipAirtableTests) {
+    // Skip this test if Supabase credentials are not available
+    if (skipSupabaseTests) {
       console.log('⚠️ Skipping test: does not send owner alert for non-urgent messages');
       return;
     }
@@ -426,8 +420,8 @@ describe('/api/new-message', () => {
   });
 
   test('respects SMS rate-limiting for multiple messages', async () => {
-    // Skip this test if Airtable credentials are not available
-    if (skipAirtableTests) {
+    // Skip this test if Supabase credentials are not available
+    if (skipSupabaseTests) {
       console.log('⚠️ Skipping test: respects SMS rate-limiting for multiple messages');
       return;
     }
@@ -496,8 +490,8 @@ describe('/api/new-message', () => {
   });
 
   test('handles Supabase lookup errors gracefully', async () => {
-    // Skip this test if Airtable credentials are not available
-    if (skipAirtableTests) {
+    // Skip this test if Supabase credentials are not available
+    if (skipSupabaseTests) {
       console.log('⚠️ Skipping test: handles Supabase lookup errors gracefully');
       return;
     }
@@ -525,8 +519,8 @@ describe('/api/new-message', () => {
   });
 
   test('logs errors when OpenAI and Twilio throw exceptions', async () => {
-    // Skip this test if Airtable credentials are not available
-    if (skipAirtableTests) {
+    // Skip this test if Supabase credentials are not available
+    if (skipSupabaseTests) {
       console.log('⚠️ Skipping test: logs errors when OpenAI and Twilio throw exceptions');
       return;
     }
@@ -582,8 +576,8 @@ describe('/api/new-message', () => {
   });
 
   test('handles missing owner phone number gracefully', async () => {
-    // Skip this test if Airtable credentials are not available
-    if (skipAirtableTests) {
+    // Skip this test if Supabase credentials are not available
+    if (skipSupabaseTests) {
       console.log('⚠️ Skipping test: handles missing owner phone number gracefully');
       return;
     }
