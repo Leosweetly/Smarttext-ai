@@ -4,7 +4,7 @@ console.log('✅ Stripe webhook endpoint hit!');
 import { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
 import { buffer } from 'micro';
-import { updateBusinessSubscription, getBusinesses } from '../../lib/airtable';
+import { updateBusinessSupabase, getBusinessesSupabase } from '../../lib/supabase';
 
 // Disable body parsing, need the raw body for signature verification
 export const config = {
@@ -78,16 +78,16 @@ export default async function handler(
             plan = 'enterprise';
           }
           
-          // Update the user's subscription in Airtable
-          await updateBusinessSubscription(userId, {
-            stripeCustomerId: customerId,
-            stripeSubscriptionId: subscriptionId,
-            subscriptionTier: plan,
-            subscriptionStatus: subscription.status,
-            trialEndsAt: subscription.trial_end 
+          // Update the user's subscription in Supabase
+          await updateBusinessSupabase(userId, {
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            subscription_tier: plan,
+            subscription_status: subscription.status,
+            trial_ends_at: subscription.trial_end 
               ? new Date(subscription.trial_end * 1000).toISOString() 
               : undefined,
-            subscriptionUpdatedAt: new Date().toISOString()
+            subscription_updated_at: new Date().toISOString()
           });
           
           console.log(`Updated subscription for user ${userId} to ${plan} plan`);
@@ -103,14 +103,14 @@ export default async function handler(
         
         // Find the business with this customer ID
         try {
-          const businesses = await getBusinesses();
-          const business = businesses.find(b => b.stripeCustomerId === customerId);
+          const businesses = await getBusinessesSupabase();
+          const business = businesses.find(b => b.stripe_customer_id === customerId);
           
           if (business && business.id) {
             // Log the payment
             console.log(`Logging payment for business ${business.id}`);
             
-            // In a production environment, you would log this to Airtable
+            // In a production environment, you would log this to Supabase
             // For example:
             /*
             const table = getTable('Payments');
@@ -137,14 +137,14 @@ export default async function handler(
         
         // Find the business with this customer ID
         try {
-          const businesses = await getBusinesses();
-          const business = businesses.find(b => b.stripeCustomerId === customerId);
+          const businesses = await getBusinessesSupabase();
+          const business = businesses.find(b => b.stripe_customer_id === customerId);
           
           if (business && business.id) {
             // Log the charge
             console.log(`Logging charge for business ${business.id}`);
             
-            // In a production environment, you would log this to Airtable
+            // In a production environment, you would log this to Supabase
             // For example:
             /*
             const table = getTable('Charges');
@@ -171,8 +171,8 @@ export default async function handler(
         
         // Find businesses with this customer ID
         try {
-          const businesses = await getBusinesses();
-          const business = businesses.find(b => b.stripeCustomerId === customerId);
+          const businesses = await getBusinessesSupabase();
+          const business = businesses.find(b => b.stripe_customer_id === customerId);
           
           if (business && business.id) {
             // Determine the plan based on the price ID
@@ -186,13 +186,13 @@ export default async function handler(
             }
             
             // Update the business subscription
-            await updateBusinessSubscription(business.id, {
-              subscriptionTier: plan,
-              subscriptionStatus: subscription.status,
-              trialEndsAt: subscription.trial_end 
+            await updateBusinessSupabase(business.id, {
+              subscription_tier: plan,
+              subscription_status: subscription.status,
+              trial_ends_at: subscription.trial_end 
                 ? new Date(subscription.trial_end * 1000).toISOString() 
                 : undefined,
-              subscriptionUpdatedAt: new Date().toISOString()
+              subscription_updated_at: new Date().toISOString()
             });
             
             console.log(`Updated subscription for business ${business.id} to ${plan} plan with status ${subscription.status}`);
@@ -213,8 +213,8 @@ export default async function handler(
         try {
           // This would be more efficient with a direct lookup by customer ID
           // For now, we'll get all businesses and filter
-          const businesses = await getBusinesses();
-          const business = businesses.find(b => b.stripeCustomerId === customerId);
+          const businesses = await getBusinessesSupabase();
+          const business = businesses.find(b => b.stripe_customer_id === customerId);
           
           if (business && business.id) {
             // Determine the plan based on the price ID
@@ -228,13 +228,13 @@ export default async function handler(
             }
             
             // Update the business subscription
-            await updateBusinessSubscription(business.id, {
-              subscriptionTier: plan,
-              subscriptionStatus: subscription.status,
-              trialEndsAt: subscription.trial_end 
+            await updateBusinessSupabase(business.id, {
+              subscription_tier: plan,
+              subscription_status: subscription.status,
+              trial_ends_at: subscription.trial_end 
                 ? new Date(subscription.trial_end * 1000).toISOString() 
                 : undefined,
-              cancelAtPeriodEnd: subscription.cancel_at_period_end
+              cancel_at_period_end: subscription.cancel_at_period_end
             });
             
             console.log(`Updated subscription for business ${business.id} to ${plan} plan with status ${subscription.status}`);
@@ -257,14 +257,14 @@ export default async function handler(
         try {
           // This would be more efficient with a direct lookup by customer ID
           // For now, we'll get all businesses and filter
-          const businesses = await getBusinesses();
-          const business = businesses.find(b => b.stripeCustomerId === customerId);
+          const businesses = await getBusinessesSupabase();
+          const business = businesses.find(b => b.stripe_customer_id === customerId);
           
           if (business && business.id) {
             // Update the business subscription
-            await updateBusinessSubscription(business.id, {
-              subscriptionStatus: 'canceled',
-              cancelAtPeriodEnd: false // It's already canceled
+            await updateBusinessSupabase(business.id, {
+              subscription_status: 'canceled',
+              cancel_at_period_end: false // It's already canceled
             });
             
             console.log(`Updated subscription status to canceled for business ${business.id}`);

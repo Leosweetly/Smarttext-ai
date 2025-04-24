@@ -1,9 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getBusinessById } from '../../lib/airtable';
-
-// Initialize Airtable for logging
-const AIRTABLE_PAT = process.env.AIRTABLE_PAT;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+import { getBusinessByIdSupabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -23,8 +20,8 @@ export default async function handler(
       });
     }
 
-    // Get the business from Airtable
-    const business = await getBusinessById(userId);
+    // Get the business from Supabase
+    const business = await getBusinessByIdSupabase(userId);
     if (!business) {
       return res.status(404).json({ error: 'Business not found' });
     }
@@ -45,7 +42,7 @@ export default async function handler(
 }
 
 /**
- * Log a subscription event to Airtable
+ * Log a subscription event to Supabase
  * @param {string} userId - The business ID
  * @param {Object} eventData - The event data to log
  */
@@ -54,22 +51,24 @@ async function logSubscriptionEvent(userId: string, eventData: any) {
     // Log to console for debugging
     console.log(`Subscription event for user ${userId}:`, eventData);
     
-    // Get the Airtable table
-    const Airtable = require('airtable');
-    const base = new Airtable({ apiKey: AIRTABLE_PAT }).base(AIRTABLE_BASE_ID);
-    const table = base('Subscription Events');
+    // Create a record in the subscription_events table
+    const { data, error } = await supabase
+      .from('subscription_events')
+      .insert({
+        business_id: userId,
+        event_type: eventData.action,
+        timestamp: eventData.timestamp,
+        details: eventData.details || {}
+      });
     
-    // Create a record in the Subscription Events table
-    await table.create({
-      'Business ID': userId,
-      'Event Type': eventData.action,
-      'Timestamp': eventData.timestamp,
-      'Details': JSON.stringify(eventData.details || {})
-    });
+    if (error) {
+      console.error('Error logging subscription event to Supabase:', error);
+      return false;
+    }
     
     return true;
   } catch (error) {
-    console.error('Error logging subscription event to Airtable:', error);
+    console.error('Error logging subscription event to Supabase:', error);
     // Log the error but don't throw, to prevent API failures
     return false;
   }

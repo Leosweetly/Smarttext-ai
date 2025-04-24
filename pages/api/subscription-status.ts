@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
-import { getBusinessById } from '../../lib/airtable';
+import { getBusinessByIdSupabase } from '../../lib/supabase';
 
 // Initialize Stripe with the secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
@@ -25,25 +25,25 @@ export default async function handler(
       return res.status(400).json({ error: 'Missing required parameter: userId' });
     }
 
-    // Get the business from Airtable
-    const business = await getBusinessById(userId);
+    // Get the business from Supabase
+    const business = await getBusinessByIdSupabase(userId);
     if (!business) {
       return res.status(404).json({ error: 'Business not found' });
     }
 
     // If the business doesn't have a Stripe customer ID, they don't have a subscription
-    if (!business.stripeCustomerId) {
+    if (!business.stripe_customer_id) {
       return res.status(200).json({
-        subscriptionTier: business.subscriptionTier || 'basic',
+        subscriptionTier: business.subscription_tier || 'basic',
         status: 'inactive',
-        trialEndsAt: business.trialEndsAt || null,
+        trialEndsAt: business.trial_ends_at || null,
         hasActiveSubscription: false
       });
     }
 
     // Get the customer's subscription from Stripe
     const subscriptions = await stripe.subscriptions.list({
-      customer: business.stripeCustomerId,
+      customer: business.stripe_customer_id,
       status: 'all',
       expand: ['data.default_payment_method']
     });
@@ -51,9 +51,9 @@ export default async function handler(
     // If the customer doesn't have any subscriptions
     if (subscriptions.data.length === 0) {
       return res.status(200).json({
-        subscriptionTier: business.subscriptionTier || 'basic',
+        subscriptionTier: business.subscription_tier || 'basic',
         status: 'inactive',
-        trialEndsAt: business.trialEndsAt || null,
+        trialEndsAt: business.trial_ends_at || null,
         hasActiveSubscription: false
       });
     }

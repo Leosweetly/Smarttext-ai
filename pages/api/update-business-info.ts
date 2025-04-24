@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getTable } from '../../lib/data/airtable-client';
+import { supabase } from '../../lib/supabase';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -86,14 +86,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (reservationLink) fields['Reservation Link'] = reservationLink;
     }
 
-    const table = getTable('Businesses');
+    // Convert fields to Supabase format
+    const supabaseFields = {
+      name: fields['Business Name'],
+      public_phone: fields['Phone Number'],
+      business_type: fields['Industry'],
+      hours_json: fields['Hours JSON'],
+      website: fields['Website'],
+      team_size: fields['Team Size'],
+      address: fields['Address'],
+      email: fields['Email'],
+      online_ordering_link: onlineOrderingLink || null,
+      reservation_link: reservationLink || null,
+      faqs_json: faqs || null
+    };
+
     let record;
 
     // context: Update existing or create new record
     if (recordId) {
-      record = await table.update(recordId, fields);
+      const { data, error } = await supabase
+        .from('businesses')
+        .update(supabaseFields)
+        .eq('id', recordId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      record = data;
     } else {
-      record = await table.create(fields);
+      const { data, error } = await supabase
+        .from('businesses')
+        .insert(supabaseFields)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      record = data;
     }
 
     return res.status(200).json({ success: true, id: record.id, data: req.body });
@@ -101,14 +130,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('[update-business-info] Error:', err.message);
     console.error('[update-business-info] Stack:', err.stack);
 
-    // context: Custom Airtable + general error handling
-    if (err.error === 'INVALID_API_KEY' || err.message?.includes('invalid api key')) {
-      return res.status(401).json({ error: 'Invalid Airtable API key', code: 'INVALID_API_KEY', details: err.message });
-    } else if (err.error === 'NOT_FOUND' || err.message?.includes('not found')) {
+    // context: Custom Supabase + general error handling
+    if (err.code === 'PGRST116' || err.message?.includes('invalid api key')) {
+      return res.status(401).json({ error: 'Invalid Supabase API key', code: 'INVALID_API_KEY', details: err.message });
+    } else if (err.code === '42P01' || err.message?.includes('not found')) {
       return res.status(404).json({ error: 'Table or record not found', code: 'NOT_FOUND', details: err.message });
-    } else if (err.error === 'PERMISSION_DENIED' || err.message?.includes('permission')) {
+    } else if (err.code === '42501' || err.message?.includes('permission')) {
       return res.status(403).json({ error: 'Permission denied', code: 'PERMISSION_DENIED', details: err.message });
-    } else if (err.message?.includes('rate limit')) {
+    } else if (err.code === '429' || err.message?.includes('rate limit')) {
       return res.status(429).json({ error: 'Rate limit exceeded', code: 'RATE_LIMIT_EXCEEDED', details: err.message });
     }
 

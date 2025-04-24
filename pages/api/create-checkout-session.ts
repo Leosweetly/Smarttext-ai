@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
-import { getBusinessById } from '../../lib/airtable';
+import { getBusinessByIdSupabase } from '../../lib/supabase';
 
 // Initialize Stripe with the secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
@@ -30,8 +30,8 @@ export default async function handler(
       });
     }
 
-    // Get the business from Airtable
-    const business = await getBusinessById(userId);
+    // Get the business from Supabase
+    const business = await getBusinessByIdSupabase(userId);
     if (!business) {
       return res.status(404).json({ error: 'Business not found' });
     }
@@ -70,11 +70,11 @@ export default async function handler(
     };
     
     // If the business has a Stripe customer ID, use it
-    if (business.stripeCustomerId) {
-      params.customer = business.stripeCustomerId;
+    if (business.stripe_customer_id) {
+      params.customer = business.stripe_customer_id;
     } else {
       // Otherwise, use the business email to create a new customer
-      params.customer_email = business.email || business.contactEmail;
+      params.customer_email = business.email || business.contact_email;
     }
     
     // Create the checkout session
