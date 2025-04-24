@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
-import { getBusinessById, updateBusinessSubscription } from '../../lib/airtable';
+import { getBusinessByIdSupabase, updateBusinessSupabase } from '../../lib/supabase';
 
 // Initialize Stripe with the secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
@@ -23,20 +23,20 @@ export default async function handler(
       return res.status(400).json({ error: 'Missing required parameter: userId' });
     }
 
-    // Get the business from Airtable
-    const business = await getBusinessById(userId);
+    // Get the business from Supabase
+    const business = await getBusinessByIdSupabase(userId);
     if (!business) {
       return res.status(404).json({ error: 'Business not found' });
     }
 
     // Check if the business has a subscription
-    if (!business.stripeSubscriptionId) {
+    if (!business.stripe_subscription_id) {
       return res.status(400).json({ error: 'No active subscription found' });
     }
 
     // Cancel the subscription
     const subscription = await stripe.subscriptions.update(
-      business.stripeSubscriptionId,
+      business.stripe_subscription_id,
       {
         cancel_at_period_end: !cancelImmediately,
       }
@@ -44,13 +44,13 @@ export default async function handler(
 
     // If cancelling immediately, cancel the subscription now
     if (cancelImmediately) {
-      await stripe.subscriptions.cancel(business.stripeSubscriptionId);
+      await stripe.subscriptions.cancel(business.stripe_subscription_id);
       
-      // Update the business subscription in Airtable
-      await updateBusinessSubscription(userId, {
-        subscriptionStatus: 'canceled',
-        cancelAtPeriodEnd: false,
-        subscriptionUpdatedAt: new Date().toISOString()
+      // Update the business subscription in Supabase
+      await updateBusinessSupabase(userId, {
+        subscription_status: 'canceled',
+        cancel_at_period_end: false,
+        subscription_updated_at: new Date().toISOString()
       });
       
       return res.status(200).json({
@@ -63,14 +63,14 @@ export default async function handler(
       });
     }
 
-    // Update the business subscription in Airtable
-    await updateBusinessSubscription(userId, {
-      cancelAtPeriodEnd: true,
-      subscriptionUpdatedAt: new Date().toISOString()
+    // Update the business subscription in Supabase
+    await updateBusinessSupabase(userId, {
+      cancel_at_period_end: true,
+      subscription_updated_at: new Date().toISOString()
     });
 
     // Log the cancellation
-    console.log(`Subscription ${business.stripeSubscriptionId} for user ${userId} will be cancelled at period end`);
+    console.log(`Subscription ${business.stripe_subscription_id} for user ${userId} will be cancelled at period end`);
 
     // Return the updated subscription
     res.status(200).json({
@@ -91,16 +91,16 @@ export default async function handler(
 }
 
 /**
- * Log a subscription event to Airtable
+ * Log a subscription event to Supabase
  * @param {string} userId - The business ID
  * @param {Object} eventData - The event data to log
  */
 async function logSubscriptionEvent(userId: string, eventData: any) {
   try {
-    // This would typically log to an Airtable table or other database
+    // This would typically log to a Supabase table
     console.log(`Subscription event for user ${userId}:`, eventData);
     
-    // In a real implementation, you would log this to Airtable
+    // In a real implementation, you would log this to Supabase
     // For now, we'll just log to the console
   } catch (error) {
     console.error('Error logging subscription event:', error);
