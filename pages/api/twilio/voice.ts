@@ -16,8 +16,12 @@ import { parse } from 'querystring';
 import twilio, { validateRequest } from 'twilio';
 // Import the functions we need directly
 import { sendSms } from '../../../lib/twilio';
-import { getBusinessByPhoneNumberSupabase } from '../../../lib/supabase.js';
-import { trackSmsEvent } from '../../../lib/monitoring.js';
+
+// Import from compatibility layer that handles both development and production environments
+import { 
+  getBusinessByPhoneNumberSupabase,
+  trackSmsEvent 
+} from '../../../lib/api-compat.js';
 
 export const config = {
   api: { bodyParser: false } // we need the raw stream for signature validation
@@ -67,14 +71,29 @@ export default async function handler(
     // Parse the body for validation
     const parsedBody = parse(rawBody) as Record<string, any>;
 
-    // Only validate in production to make local testing easier
-    if (process.env.NODE_ENV === 'production') {
+    // Only validate in production (unless explicitly skipped)
+    const isTestEnv = process.env.NODE_ENV !== 'production' || process.env.SKIP_TWILIO_SIGNATURE === 'true';
+    
+    if (!isTestEnv) {
+      // More robust URL construction with consistent format
+      const webhookUrl = process.env.PUBLIC_BASE_URL 
+        ? `${process.env.PUBLIC_BASE_URL.replace(/\/+$/, '')}/api/twilio/voice` 
+        : `https://${req.headers.host}/api/twilio/voice`;
+      
+      // Enhanced logging for debugging
+      console.log("🔍 Validation attempt with:", {
+        authToken: process.env.TWILIO_AUTH_TOKEN ? "present (redacted)" : "missing",
+        signature: signature ? signature : "missing",
+        webhookUrl,
+        paramCount: Object.keys(parsedBody).length
+      });
+      
       if (
         !signature ||
         !validateRequest(
           process.env.TWILIO_AUTH_TOKEN!,
           signature,
-          fullUrl,
+          webhookUrl,
           parsedBody
         )
       ) {
@@ -83,7 +102,7 @@ export default async function handler(
       }
       console.log('✅ Twilio signature validated successfully');
     } else {
-      console.log('⚠️ Skipping Twilio signature validation in development');
+      console.log('⚠️ Skipping Twilio signature validation in test environment');
     }
 
     // -----------------------------------------------------------------

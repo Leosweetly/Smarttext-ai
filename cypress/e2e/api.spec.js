@@ -2,9 +2,8 @@
 
 describe('API Endpoints', () => {
   it('should create a new business record via /api/update-business-info', () => {
-    // Skip this test if running in CI without Airtable credentials
-    if (Cypress.env('CI') && (!Cypress.env('AIRTABLE_PAT') || !Cypress.env('AIRTABLE_BASE_ID'))) {
-      cy.log('Skipping test because Airtable credentials are not available in CI');
+    // Skip this test if Airtable credentials are not available
+    if (cy.skipIfNoAirtable()) {
       return;
     }
     
@@ -27,9 +26,8 @@ describe('API Endpoints', () => {
   });
   
   it('should create a new business record via /api/update-business-info-v2', () => {
-    // Skip this test if running in CI without Airtable credentials
-    if (Cypress.env('CI') && (!Cypress.env('AIRTABLE_PAT') || !Cypress.env('AIRTABLE_BASE_ID'))) {
-      cy.log('Skipping test because Airtable credentials are not available in CI');
+    // Skip this test if Airtable credentials are not available
+    if (cy.skipIfNoAirtable()) {
       return;
     }
     
@@ -52,9 +50,8 @@ describe('API Endpoints', () => {
   });
   
   it('should update an existing business record', () => {
-    // Skip this test if running in CI without Airtable credentials
-    if (Cypress.env('CI') && (!Cypress.env('AIRTABLE_PAT') || !Cypress.env('AIRTABLE_BASE_ID'))) {
-      cy.log('Skipping test because Airtable credentials are not available in CI');
+    // Skip this test if Airtable credentials are not available
+    if (cy.skipIfNoAirtable()) {
       return;
     }
     

@@ -157,20 +157,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         rawBody += chunk.toString();
       }
       
-      // Validate Twilio request signature in production
-      if (process.env.NODE_ENV === 'production') {
+      // Validate Twilio request signature in production (unless explicitly skipped)
+      const isTestEnv = process.env.NODE_ENV !== 'production' || process.env.SKIP_TWILIO_SIGNATURE === 'true';
+      
+      if (!isTestEnv) {
         const twilioSignature = req.headers['x-twilio-signature'] as string;
+        // More robust URL construction with consistent format
         const webhookUrl = process.env.WEBHOOK_BASE_URL 
-          ? `${process.env.WEBHOOK_BASE_URL}/api/new-message` 
+          ? `${process.env.WEBHOOK_BASE_URL.replace(/\/+$/, '')}/api/new-message` 
           : `https://${req.headers.host}/api/new-message`;
           
-        console.log('[step 1] 🔐 Validating Twilio signature:', {
-          signature: twilioSignature ? 'present' : 'missing',
-          webhookUrl
-        });
-        
         // Parse the raw body for validation
         const params = parse(rawBody);
+        
+        // Enhanced logging for debugging
+        console.log('[step 1] 🔐 Validating Twilio signature:', {
+          authToken: process.env.TWILIO_AUTH_TOKEN ? 'present (redacted)' : 'missing',
+          signature: twilioSignature ? 'present' : 'missing',
+          webhookUrl,
+          paramCount: Object.keys(params).length
+        });
         
         const isValidRequest = validateRequest(
           process.env.TWILIO_AUTH_TOKEN || '',
@@ -181,6 +187,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         if (!isValidRequest) {
           console.error('[step 1] ❌ Invalid Twilio signature');
+          console.error('[step 1] 🔍 Signature:', twilioSignature);
+          console.error('[step 1] 🔍 Webhook URL:', webhookUrl);
           return res.status(403).json({
             error: 'Invalid signature',
             message: 'Could not validate that this request came from Twilio'
@@ -189,7 +197,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         console.log('[step 1] ✅ Twilio signature validated successfully');
       } else {
-        console.log('[step 1] ⚠️ Skipping Twilio signature validation in development');
+        console.log('[step 1] ⚠️ Skipping Twilio signature validation in test environment');
       }
       
       // Parse the form data

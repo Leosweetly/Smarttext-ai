@@ -37,20 +37,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         rawBody += chunk.toString();
       }
       
-      // Validate Twilio request signature in production
-      if (process.env.NODE_ENV === 'production') {
+      // Validate Twilio request signature in production (unless explicitly skipped)
+      const isTestEnv = process.env.NODE_ENV !== 'production' || process.env.SKIP_TWILIO_SIGNATURE === 'true';
+      
+      if (!isTestEnv) {
         const twilioSignature = req.headers['x-twilio-signature'] as string;
+        // More robust URL construction with consistent format
         const webhookUrl = process.env.WEBHOOK_BASE_URL 
-          ? `${process.env.WEBHOOK_BASE_URL}/api/twilio/call-status` 
+          ? `${process.env.WEBHOOK_BASE_URL.replace(/\/+$/, '')}/api/twilio/call-status` 
           : `https://${req.headers.host}/api/twilio/call-status`;
           
-        console.log('🔐 Validating Twilio signature:', {
-          signature: twilioSignature ? 'present' : 'missing',
-          webhookUrl
-        });
-        
         // Parse the raw body for validation
         const params = parse(rawBody);
+        
+        // Enhanced logging for debugging
+        console.log('🔐 Validating Twilio signature:', {
+          authToken: process.env.TWILIO_AUTH_TOKEN ? 'present (redacted)' : 'missing',
+          signature: twilioSignature ? 'present' : 'missing',
+          webhookUrl,
+          paramCount: Object.keys(params).length
+        });
         
         const isValidRequest = validateRequest(
           process.env.TWILIO_AUTH_TOKEN || '',

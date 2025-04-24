@@ -1,0 +1,17 @@
+# SmartText Monitoring System Crontab
+# Copy these entries to your server's crontab using:
+#   crontab -e
+#
+# Make sure to replace /path/to/smarttext with the actual path to your SmartText installation
+
+# Reset OpenAI usage counters at 12:01 AM every day
+1 0 * * * cd /path/to/smarttext && node scripts/update-daily-stats.js --reset-openai >> /var/log/smarttext/monitoring-reset.log 2>&1
+
+# Update daily stats for yesterday at 12:05 AM every day
+5 0 * * * cd /path/to/smarttext && node scripts/update-daily-stats.js >> /var/log/smarttext/monitoring-stats.log 2>&1
+
+# Clean up monitoring data older than 90 days at 1:00 AM every Sunday
+0 1 * * 0 cd /path/to/smarttext && node scripts/cleanup-monitoring-data.js --days 90 >> /var/log/smarttext/monitoring-cleanup.log 2>&1
+
+# Run a test of the monitoring system at 2:00 AM every Monday
+0 2 * * 1 cd /path/to/smarttext && node scripts/test-monitoring.js >> /var/log/smarttext/monitoring-test.log 2>&1

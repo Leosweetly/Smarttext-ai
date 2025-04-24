@@ -3,10 +3,16 @@ import twilio, { validateRequest } from 'twilio';
 import getRawBody from 'raw-body';
 
 // Import the functions we need directly
-import { getBusinessByPhoneNumberSupabase, logCallEventSupabase } from '../../lib/supabase.js';
 import { generateMissedCallResponse } from '../../lib/openai.js';
 import { sendSms } from '../../lib/twilio';
-import { trackSmsEvent, trackOwnerAlert } from '../../lib/monitoring.js';
+
+// Import from compatibility layer that handles both development and production environments
+import { 
+  getBusinessByPhoneNumberSupabase, 
+  logCallEventSupabase,
+  trackSmsEvent, 
+  trackOwnerAlert 
+} from '../../lib/api-compat.js';
 
 export const config = {
   api: { bodyParser: false },
@@ -146,16 +152,31 @@ export default async function handler(
   }
 
   // ---------------------------------------------------------------------------
-  // Validate Twilio signature (production only)
+  // Validate Twilio signature (production only, unless explicitly skipped)
   // ---------------------------------------------------------------------------
-  if (process.env.NODE_ENV === "production") {
-    const twilioSignature = req.headers["x-twilio-signature"] as
-      | string
-      | undefined;
+  const isTestEnv = process.env.NODE_ENV !== 'production' || process.env.SKIP_TWILIO_SIGNATURE === 'true';
 
-    const webhookUrl =
-      (process.env.WEBHOOK_BASE_URL?.replace(/\/$/, "") ||
-        `https://${req.headers.host}`) + req.url;
+  const shouldValidateSignature =
+  process.env.NODE_ENV === 'production' && process.env.SKIP_TWILIO_SIGNATURE !== 'true';
+
+if (shouldValidateSignature) {
+  const twilioSignature = req.headers["x-twilio-signature"] as
+    | string
+    | undefined;
+
+
+    // More robust URL construction with consistent format
+    const webhookUrl = process.env.WEBHOOK_BASE_URL 
+      ? `${process.env.WEBHOOK_BASE_URL.replace(/\/+$/, '')}/api/missed-call` 
+      : `https://${req.headers.host}/api/missed-call`;
+
+    // Enhanced logging for debugging
+    console.log("🔍 Validation attempt with:", {
+      authToken: process.env.TWILIO_AUTH_TOKEN ? "present (redacted)" : "missing",
+      signature: twilioSignature ? twilioSignature : "missing",
+      webhookUrl,
+      paramCount: Object.keys(params).length
+    });
 
     const valid = validateRequest(
       process.env.TWILIO_AUTH_TOKEN ?? "",
@@ -165,8 +186,13 @@ export default async function handler(
     );
 
     if (!valid) {
+      console.log("❌ Invalid Twilio signature");
+      console.log("🔍 Signature:", twilioSignature);
+      console.log("🔍 Webhook URL:", webhookUrl);
       return res.status(403).json({ error: "Invalid Twilio signature" });
     }
+  } else {
+    console.log("⚠️ Skipping Twilio signature validation in test environment");
   }
 
   // ---------------------------------------------------------------------------

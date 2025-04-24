@@ -14,9 +14,12 @@ jobs:
       # Set SKIP_CYPRESS to 'true' in GitHub secrets to bypass Cypress tests
       # This can be useful if Cypress tests are blocking deployment
       SKIP_CYPRESS: ${{ secrets.SKIP_CYPRESS || 'false' }}
-      # Airtable credentials for API tests
+      # Airtable credentials for API tests (can be dummy values)
       AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT }}
       AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+      # Supabase credentials for API tests
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     
     steps:
     - name: Checkout code
@@ -71,6 +74,9 @@ jobs:
         # Pass Airtable credentials to Cypress
         AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT }}
         AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+        # Pass Supabase credentials to Cypress
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       
     - name: Skip Cypress tests notification
       if: env.SKIP_CYPRESS == 'true'

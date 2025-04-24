@@ -13,6 +13,8 @@ pages/api/auth
 # Explicitly include lib directory
 !lib/
 !lib/**/*
+!lib/supabase.js
+!lib/monitoring.js
 
 # Ignore development files
 .git
