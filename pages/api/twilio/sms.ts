@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { validateRequest } from 'twilio/lib/webhooks/webhooks';
 import { parse } from 'querystring';
 import twilio from 'twilio';
+import { getBusinessByPhoneNumberSupabase } from '../../../lib/supabase';
+import { handleIncomingSms } from '../../../lib/openai';
 
 // Disable Next.js body parser to handle raw request body
 export const config = {
@@ -87,15 +89,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     const incomingMessage = body.Body;
     const fromNumber = body.From;
+    const toNumber = body.To;
 
-    console.log(`📲 Incoming SMS from ${fromNumber}: ${incomingMessage}`);
+    console.log(`📲 Incoming SMS from ${fromNumber} to ${toNumber}: ${incomingMessage}`);
 
     // Create TwiML response
     const twimlResponse = new twilio.twiml.MessagingResponse();
-    twimlResponse.message(`Hi! We received your message: "${incomingMessage}". We'll get back to you shortly!`);
+    
+    try {
+      // Look up the business by phone number
+      const business = await getBusinessByPhoneNumberSupabase(toNumber);
+      
+      if (!business) {
+        console.warn(`❌ No business found for phone number: ${toNumber}`);
+        twimlResponse.message(`We're sorry, but we couldn't identify the business you're trying to reach.`);
+      } else {
+        console.log(`✅ Found business: ${business.name} (${business.id})`);
+        
+        // Use our new handleIncomingSms function to generate a response
+        const response = await handleIncomingSms(incomingMessage, business);
+        
+        // Add the response to the TwiML
+        twimlResponse.message(response);
+        
+        console.log(`✅ Generated response: "${response}"`);
+      }
+    } catch (error) {
+      console.error(`❌ Error generating response:`, error);
+      twimlResponse.message(`We're sorry, but we encountered an error processing your message. Please try again later.`);
+    }
 
     // Respond back to Twilio
-    res.setHeader('Content-Type', 'text/xml');
+    res.setHeader('Content-Type', 'text/xml; charset=utf-8');
     res.status(200).send(twimlResponse.toString());
   } catch (err: any) {
     console.error(`❌ Error in SMS webhook:`, err.message);
