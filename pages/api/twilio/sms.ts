@@ -3,7 +3,7 @@ import { validateRequest } from 'twilio/lib/webhooks/webhooks';
 import { parse } from 'querystring';
 import twilio from 'twilio';
 import { getBusinessByPhoneNumberSupabase } from '../../../lib/supabase';
-import { handleIncomingSms } from '../../../lib/openai';
+import { handleIncomingSms } from '../../../lib/openai.js';
 
 // Disable Next.js body parser to handle raw request body
 export const config = {
