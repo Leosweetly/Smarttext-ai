@@ -12,7 +12,7 @@ import {
   logCallEventSupabase,
   trackSmsEvent, 
   trackOwnerAlert 
-} from '../../lib/api-compat.js';
+} from '../../lib/api-compat';
 
 export const config = {
   api: { bodyParser: false },
