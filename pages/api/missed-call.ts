@@ -65,14 +65,32 @@ export default async function handler(
   console.log("🔍 Request query:", req.query);
   
   // ---------------------------------------------------------------------------
-  // Parse x-www-form-urlencoded body
+  // Parse body (handling different Content-Types)
   // ---------------------------------------------------------------------------
   const rawBody = await getRawBody(req, { limit: "1mb" });
   console.log("🔍 Raw body:", rawBody.toString());
   
-  const params = Object.fromEntries(
-    new URLSearchParams(rawBody.toString())
-  ) as Partial<TwilioWebhookParams>;
+  let params: Partial<TwilioWebhookParams> = {};
+  
+  // Check Content-Type header
+  const contentType = req.headers['content-type'] || '';
+  console.log("🔍 Content-Type:", contentType);
+  
+  if (contentType.includes('application/json')) {
+    // Parse JSON body
+    try {
+      params = JSON.parse(rawBody.toString());
+      console.log("📝 Parsed JSON body:", params);
+    } catch (err) {
+      console.error("❌ Error parsing JSON body:", err);
+    }
+  } else {
+    // Default to form-urlencoded parsing
+    params = Object.fromEntries(
+      new URLSearchParams(rawBody.toString())
+    ) as Partial<TwilioWebhookParams>;
+    console.log("📝 Parsed form-urlencoded body:", params);
+  }
 
   // Hydrate req.body so any code that tries to access it directly will work
   (req as any).body = params;
@@ -198,10 +216,9 @@ if (shouldValidateSignature) {
   // ---------------------------------------------------------------------------
   // Ignore calls that were answered/connected
   // ---------------------------------------------------------------------------
-  if (!MISSED_STATUSES.has(finalCallStatus)) {
-    return res
-      .status(200)
-      .json({ success: true, message: `Status ${finalCallStatus} ignored` });
+  const isMissed = MISSED_STATUSES.has(finalCallStatus) || (finalCallStatus === 'completed' && Number(finalConnectDuration ?? 0) === 0);
+  if (!isMissed) {
+    return res.status(200).json({ success: true, message: `Status ${finalCallStatus} ignored` });
   }
 
   // ---------------------------------------------------------------------------
@@ -307,6 +324,10 @@ if (shouldValidateSignature) {
           console.log(`📝 Using default message: "${body}"`);
         }
       }
+      
+      // Debug log to verify business name and message
+      console.log(`🔍 DEBUG: Business name: "${business.name}"`);
+      console.log(`🔍 DEBUG: Final message to send: "${body}"`);
 
       const twilioNumber = process.env.TWILIO_PHONE_NUMBER!;
       console.log(`🚀 Sending SMS from ${twilioNumber} to ${finalFrom}`);
