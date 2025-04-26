@@ -101,6 +101,7 @@ export default async function handler(
     CallSid = "",
     CallStatus = "",
     ConnectDuration,
+    CallDuration,
   } = params;
 
   console.log("📝 Parsed Twilio body:", params);
@@ -108,7 +109,7 @@ export default async function handler(
   // ---------------------------------------------------------------------------
   // Fallback to query params if body params are missing
   // ---------------------------------------------------------------------------
-  const { To: queryTo, From: queryFrom, CallSid: queryCallSid, CallStatus: queryCallStatus, ConnectDuration: queryConnectDuration } = req.query;
+  const { To: queryTo, From: queryFrom, CallSid: queryCallSid, CallStatus: queryCallStatus, ConnectDuration: queryConnectDuration, CallDuration: queryCallDuration } = req.query;
 
   // Extract values from Twilio's standard callback parameters if present
   let callbackTo = "";
@@ -133,6 +134,7 @@ export default async function handler(
   const finalCallSid = CallSid || callbackCallSid || (queryCallSid as string) || "";
   const finalCallStatus = CallStatus || callbackCallStatus || (queryCallStatus as string) || "no-answer"; // Default to no-answer
   const finalConnectDuration = ConnectDuration || (queryConnectDuration as string);
+  const finalCallDuration = CallDuration || (queryCallDuration as string);
 
   // Debug logs to confirm
   console.log("🧩 Final parsed To:", finalTo);
@@ -140,6 +142,7 @@ export default async function handler(
   console.log("🧩 Final parsed CallSid:", finalCallSid);
   console.log("🧩 Final parsed CallStatus:", finalCallStatus);
   console.log("🧩 Final parsed ConnectDuration:", finalConnectDuration);
+  console.log("🧩 Final parsed CallDuration:", finalCallDuration);
 
   // ---------------------------------------------------------------------------
   // Validate required fields (with more detailed error messages)
@@ -214,11 +217,15 @@ if (shouldValidateSignature) {
   }
 
   // ---------------------------------------------------------------------------
-  // Ignore calls that were answered/connected
+  // Determine if call was missed (no-answer or very short duration)
   // ---------------------------------------------------------------------------
-  const isMissed = finalCallStatus === 'no-answer' || (finalCallStatus === 'completed' && Number(finalConnectDuration ?? 0) === 0);
+  const duration = Number(finalCallDuration ?? finalConnectDuration ?? 0);
+  const isMissed =
+    finalCallStatus === 'no-answer' ||
+    (finalCallStatus === 'completed' && duration <= 10);
+  
   if (!isMissed) {
-    return res.status(200).json({ success: true, message: `Status ${finalCallStatus} ignored` });
+    return res.status(200).json({ success: true, message: `Status ${finalCallStatus} ignored (duration: ${duration}s)` });
   }
 
   // ---------------------------------------------------------------------------
@@ -289,12 +296,12 @@ if (shouldValidateSignature) {
   }).catch(console.error);
 
   // ---------------------------------------------------------------------------
-  // Auto‑reply SMS (only if call never connected)
+  // Auto‑reply SMS (for missed calls and very short calls)
   // ---------------------------------------------------------------------------
-  const connected = Number(finalConnectDuration ?? 0) > 0;
-  console.log(`🔄 Call connection status: ${connected ? 'Connected' : 'Not connected'} (Duration: ${finalConnectDuration || '0'})`);
+  const shouldSendAutoReply = duration <= 10;
+  console.log(`🔄 Call duration: ${duration}s, should send auto-reply: ${shouldSendAutoReply}`);
   
-  if (!connected) {
+  if (shouldSendAutoReply) {
     console.log(`📱 Preparing to send auto-reply SMS to ${finalFrom}`);
     try {
       // Try to generate a custom response first
@@ -369,7 +376,7 @@ if (shouldValidateSignature) {
       });
     }
   } else {
-    console.log(`⏭️ Skipping auto-reply SMS because call was connected (Duration: ${finalConnectDuration})`);
+    console.log(`⏭️ Skipping auto-reply SMS because call duration was > 10s (Duration: ${duration}s)`);
   }
 
   // ---------------------------------------------------------------------------
