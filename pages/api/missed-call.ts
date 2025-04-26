@@ -3,7 +3,7 @@ import twilio, { validateRequest } from 'twilio';
 import getRawBody from 'raw-body';
 
 // Import the functions we need directly
-import { generateMissedCallResponse } from '../../lib/openai.js';
+import { generateMissedCallResponse } from '../../lib/openai';
 import { sendSms } from '../../lib/twilio';
 
 // Import from compatibility layer that handles both development and production environments
