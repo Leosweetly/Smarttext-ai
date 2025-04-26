@@ -229,17 +229,28 @@ if (shouldValidateSignature) {
     (finalCallStatus === 'completed' && duration <= 10);
   
   if (!isMissed) {
+    console.log('[missed-call] NOT missed – skipping SMS', { duration, CallStatus: finalCallStatus });
     return res.status(200).json({ success: true, message: `Status ${finalCallStatus} ignored (duration: ${duration}s)` });
+  } else {
+    console.log('[missed-call] MISS detected – about to send SMS');
   }
 
   // ---------------------------------------------------------------------------
   // Business lookup
   // ---------------------------------------------------------------------------
-  const business = await getBusinessByPhoneNumberSupabase(finalTo);
-  if (!business) {
-    return res.status(404).json({ error: "Business not found" });
+  let business;
+  try {
+    console.log('[missed-call] About to look up business by phone number:', finalTo);
+    business = await getBusinessByPhoneNumberSupabase(finalTo);
+    if (!business) {
+      console.log('[missed-call] Business not found for phone number:', finalTo);
+      return res.status(404).json({ error: "Business not found" });
+    }
+    console.log(`✅ Business found: ${business.name} (${business.id})`);
+  } catch (err) {
+    console.error('[missed-call] Error looking up business:', err);
+    return res.status(500).json({ error: "Error looking up business", details: err.message });
   }
-  console.log(`✅ Business found: ${business.name} (${business.id})`);
 
   // ---------------------------------------------------------------------------
   // Notify owner (if we have a number)
@@ -248,9 +259,20 @@ if (shouldValidateSignature) {
     business.customSettings?.ownerPhone ?? process.env.DEFAULT_OWNER_PHONE;
   let ownerNotificationSent = false;
 
+  console.log('[missed-call] Owner notification check', { 
+    ownerPhone: ownerPhone ? 'present' : 'missing',
+    autoReplyEnabled: business.autoReplyEnabled || business.customSettings?.autoReplyEnabled || false
+  });
+
   if (ownerPhone) {
     try {
       const fromNumber = process.env.TWILIO_PHONE_NUMBER!;
+      console.log('[missed-call] Attempting to send owner notification SMS', {
+        to: ownerPhone,
+        from: fromNumber,
+        requestId: `${finalCallSid}-owner`
+      });
+      
       const ownerMsg = await sendSms({
         body: `Missed call from ${finalFrom}. Status: ${finalCallStatus}`,
         from: fromNumber,
@@ -258,6 +280,7 @@ if (shouldValidateSignature) {
         requestId: `${finalCallSid}-owner`,
       });
       ownerNotificationSent = true;
+      console.log('[missed-call] Owner notification SMS sent successfully', { messageSid: ownerMsg.sid });
 
       await trackOwnerAlert({
         businessId: business.id,
@@ -304,6 +327,12 @@ if (shouldValidateSignature) {
   // ---------------------------------------------------------------------------
   const shouldSendAutoReply = duration <= 10;
   console.log(`🔄 Call duration: ${duration}s, should send auto-reply: ${shouldSendAutoReply}`);
+  console.log('[missed-call] Auto-reply check', {
+    shouldSendAutoReply,
+    autoReplyEnabled: business.autoReplyEnabled || business.customSettings?.autoReplyEnabled || false,
+    businessName: business.name,
+    businessId: business.id
+  });
   
   if (shouldSendAutoReply) {
     console.log(`📱 Preparing to send auto-reply SMS to ${finalFrom}`);
@@ -340,28 +369,45 @@ if (shouldValidateSignature) {
       const twilioNumber = process.env.TWILIO_PHONE_NUMBER!;
       console.log(`🚀 Sending SMS from ${twilioNumber} to ${finalFrom}`);
       
-      const sms = await sendSms({
-        body,
-        from: twilioNumber,
-        to: finalFrom,
-        requestId: finalCallSid,
-        bypassRateLimit: true // Bypass rate limiting to ensure the SMS is sent
-      });
-
-      console.log(`📤 Sent auto-reply to ${finalFrom}`, sms);
+      try {
+        const sms = await sendSms({
+          body,
+          from: twilioNumber,
+          to: finalFrom,
+          requestId: finalCallSid,
+          bypassRateLimit: true // Bypass rate limiting to ensure the SMS is sent
+        });
+        console.log('[missed-call] SMS sent to', finalFrom);
+        console.log(`📤 Sent auto-reply to ${finalFrom}`, sms);
       
-      await trackSmsEvent({
-        messageSid: sms.sid,
-        from: twilioNumber,
-        to: finalFrom,
-        businessId: business.id,
-        status: sms.status ?? "sent",
-        errorCode: null,
-        errorMessage: null,
-        requestId: finalCallSid,
-        bodyLength: body.length,
-        payload: { type: "missed_call_auto_reply", callSid: finalCallSid },
-      });
+        await trackSmsEvent({
+          messageSid: sms.sid,
+          from: twilioNumber,
+          to: finalFrom,
+          businessId: business.id,
+          status: sms.status ?? "sent",
+          errorCode: null,
+          errorMessage: null,
+          requestId: finalCallSid,
+          bodyLength: body.length,
+          payload: { type: "missed_call_auto_reply", callSid: finalCallSid },
+        });
+      } catch (smsErr) {
+        console.error('[missed-call] SMS FAILED', smsErr);
+        
+        await trackSmsEvent({
+          messageSid: "",
+          from: twilioNumber,
+          to: finalFrom,
+          businessId: business.id,
+          status: "failed",
+          errorCode: smsErr?.code?.toString() ?? "unknown",
+          errorMessage: smsErr?.message ?? "Unknown",
+          requestId: finalCallSid,
+          bodyLength: body.length,
+          payload: { type: "missed_call_auto_reply", callSid: finalCallSid, error: smsErr },
+        });
+      }
     } catch (err: any) {
       console.error(`❌ Error sending auto-reply SMS:`, err);
       console.error(`❌ Error details:`, JSON.stringify(err, null, 2));
