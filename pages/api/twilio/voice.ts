@@ -98,7 +98,17 @@ export default async function handler(
         )
       ) {
         console.warn('🚫 Invalid Twilio signature – request rejected');
-        return res.status(403).end('Invalid Twilio signature');
+        
+        // Create an error TwiML response instead of plain text
+        const errorTwiml = new twilio.twiml.VoiceResponse();
+        errorTwiml.say(
+          { voice: 'alice' },
+          "Invalid request signature. This request could not be verified as coming from Twilio."
+        );
+        
+        // Force-set header after TwiML is built and before any body is written
+        res.writeHead(403, { 'Content-Type': 'text/xml' });
+        return res.end(errorTwiml.toString());
       }
       console.log('✅ Twilio signature validated successfully');
     } else {
@@ -117,9 +127,17 @@ export default async function handler(
     const { To, From, CallSid } = body;
     if (!To || !From) {
       console.error('❌ Missing To or From in Twilio webhook');
-      return res
-        .status(400)
-        .json({ error: 'Missing To or From in Twilio webhook' });
+      
+      // Create an error TwiML response instead of JSON
+      const errorTwiml = new twilio.twiml.VoiceResponse();
+      errorTwiml.say(
+        { voice: 'alice' },
+        "Missing required parameters. The webhook must include To and From fields."
+      );
+      
+      // Force-set header after TwiML is built and before any body is written
+      res.writeHead(400, { 'Content-Type': 'text/xml' });
+      return res.end(errorTwiml.toString());
     }
 
     // Normalise numbers to E.164 (assume US if country code absent)
@@ -256,8 +274,9 @@ export default async function handler(
     const twimlString = twiml.toString();
     console.log(`� Final TwiML response:`, twimlString);
     
-    res.setHeader('Content-Type', 'text/xml; charset=utf-8');
-    return res.status(200).send(twimlString);
+    // Force-set header after TwiML is built and before any body is written
+    res.writeHead(200, { 'Content-Type': 'text/xml' });
+    return res.end(twimlString);
   } catch (error: any) {
     // -----------------------------------------------------------------
     // 8. Fallback error TwiML (still HTTP 200 per your preference)
@@ -274,8 +293,9 @@ export default async function handler(
     const errorTwimlString = twiml.toString();
     console.log(`� Error TwiML response:`, errorTwimlString);
 
-    res.setHeader('Content-Type', 'text/xml; charset=utf-8');
-    return res.status(200).send(errorTwimlString);
+    // Force-set header after TwiML is built and before any body is written
+    res.writeHead(200, { 'Content-Type': 'text/xml' });
+    return res.end(errorTwimlString);
   }
 }
 

@@ -68,10 +68,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         if (!isValidRequest) {
           console.error('❌ Invalid Twilio signature');
-          return res.status(403).json({
-            error: 'Invalid signature',
-            message: 'Could not validate that this request came from Twilio'
-          });
+          
+          // Create an error TwiML response instead of JSON
+          const errorTwiml = new twilio.twiml.MessagingResponse();
+          errorTwiml.message("Invalid request signature. This request could not be verified as coming from Twilio.");
+          
+          // Force-set header after TwiML is built and before any body is written
+          res.writeHead(403, { 'Content-Type': 'text/xml' });
+          return res.end(errorTwiml.toString());
         }
         
         console.log('✅ Twilio signature validated successfully');
@@ -120,12 +124,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Respond back to Twilio
-    res.setHeader('Content-Type', 'text/xml; charset=utf-8');
-    res.status(200).send(twimlResponse.toString());
+    // Force-set header after TwiML is built and before any body is written
+    res.writeHead(200, { 'Content-Type': 'text/xml' });
+    return res.end(twimlResponse.toString());
   } catch (err: any) {
     console.error(`❌ Error in SMS webhook:`, err.message);
     console.error(`Stack:`, err.stack);
 
-    return res.status(500).json({ error: err.message || 'Server error' });
+    // Create an error TwiML response instead of JSON
+    const errorTwiml = new twilio.twiml.MessagingResponse();
+    errorTwiml.message("We're sorry, but we encountered an error processing your message. Please try again later.");
+    
+    // Force-set header after TwiML is built and before any body is written
+    res.writeHead(200, { 'Content-Type': 'text/xml' });
+    return res.end(errorTwiml.toString());
   }
 }
