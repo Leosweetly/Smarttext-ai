@@ -102,6 +102,7 @@ export default async function handler(
     CallStatus = "",
     ConnectDuration,
     CallDuration,
+    Duration,
   } = params;
 
   console.log("📝 Parsed Twilio body:", params);
@@ -109,7 +110,7 @@ export default async function handler(
   // ---------------------------------------------------------------------------
   // Fallback to query params if body params are missing
   // ---------------------------------------------------------------------------
-  const { To: queryTo, From: queryFrom, CallSid: queryCallSid, CallStatus: queryCallStatus, ConnectDuration: queryConnectDuration, CallDuration: queryCallDuration } = req.query;
+  const { To: queryTo, From: queryFrom, CallSid: queryCallSid, CallStatus: queryCallStatus, ConnectDuration: queryConnectDuration, CallDuration: queryCallDuration, Duration: queryDuration } = req.query;
 
   // Extract values from Twilio's standard callback parameters if present
   let callbackTo = "";
@@ -135,6 +136,7 @@ export default async function handler(
   const finalCallStatus = CallStatus || callbackCallStatus || (queryCallStatus as string) || "no-answer"; // Default to no-answer
   const finalConnectDuration = ConnectDuration || (queryConnectDuration as string);
   const finalCallDuration = CallDuration || (queryCallDuration as string);
+  const finalDuration = Duration || (queryDuration as string);
 
   // Debug logs to confirm
   console.log("🧩 Final parsed To:", finalTo);
@@ -143,6 +145,7 @@ export default async function handler(
   console.log("🧩 Final parsed CallStatus:", finalCallStatus);
   console.log("🧩 Final parsed ConnectDuration:", finalConnectDuration);
   console.log("🧩 Final parsed CallDuration:", finalCallDuration);
+  console.log("🧩 Final parsed Duration:", finalDuration);
 
   // ---------------------------------------------------------------------------
   // Validate required fields (with more detailed error messages)
@@ -219,7 +222,8 @@ if (shouldValidateSignature) {
   // ---------------------------------------------------------------------------
   // Determine if call was missed (no-answer or very short duration)
   // ---------------------------------------------------------------------------
-  const duration = Number(finalCallDuration ?? finalConnectDuration ?? 0);
+  const duration = Number(finalDuration ?? finalCallDuration ?? finalConnectDuration ?? 0);
+  console.log('[missed-call] durations', { Duration, CallDuration, ConnectDuration, duration, CallStatus });
   const isMissed =
     finalCallStatus === 'no-answer' ||
     (finalCallStatus === 'completed' && duration <= 10);
