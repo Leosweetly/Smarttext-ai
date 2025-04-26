@@ -216,7 +216,7 @@ if (shouldValidateSignature) {
   // ---------------------------------------------------------------------------
   // Ignore calls that were answered/connected
   // ---------------------------------------------------------------------------
-  const isMissed = MISSED_STATUSES.has(finalCallStatus) || (finalCallStatus === 'completed' && Number(finalConnectDuration ?? 0) === 0);
+  const isMissed = finalCallStatus === 'no-answer' || (finalCallStatus === 'completed' && Number(finalConnectDuration ?? 0) === 0);
   if (!isMissed) {
     return res.status(200).json({ success: true, message: `Status ${finalCallStatus} ignored` });
   }
@@ -301,10 +301,7 @@ if (shouldValidateSignature) {
       let body;
       try {
         console.log(`🤖 Attempting to generate custom response for ${business.name} (tier: ${business.subscription_tier || 'basic'})`);
-        body = await generateMissedCallResponse(
-          business,
-          business.subscription_tier ?? "basic"
-        );
+        body = await generateMissedCallResponse(business);
         console.log(`✅ Generated custom response: "${body}"`);
       } catch (genErr) {
         console.error(`❌ Error generating custom response:`, genErr);

@@ -111,7 +111,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.log(`✅ Found business: ${business.name} (${business.id})`);
         
         // Use our new handleIncomingSms function to generate a response
-        const response = await handleIncomingSms(incomingMessage, business);
+        const response = await handleIncomingSms(business);
         
         // Add the response to the TwiML
         twimlResponse.message(response);
