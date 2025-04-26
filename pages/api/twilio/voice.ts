@@ -200,79 +200,52 @@ export default async function handler(
       `Hey, thanks for calling ${businessName}, we're currently unavailable but we will text you shortly.`
     );
     
-    if (forwardingNumber) {
-      // Make sure we include all required parameters in the action URL
-      // This ensures the missed-call endpoint has all the data it needs
-      // IMPORTANT: Use absolute URL to avoid issues with relative paths
-      const actionUrl = `${baseUrl}/api/missed-call?From=${encodeURIComponent(fromNumber)}&To=${encodeURIComponent(toNumber)}&CallSid=${encodeURIComponent(CallSid)}&CallStatus=completed`;
-      
-      // Force the action URL to be absolute by using the full baseUrl
-      const dial = twiml.dial({
-        action: actionUrl,
-        method: 'POST',
-        callerId: toNumber,
-        timeout: 20
-      });
-      dial.number(forwardingNumber);
-      
-      console.log(`🔗 Dial action URL set to: ${actionUrl}`);
-      
-      // Verify the TwiML output to ensure the action URL is set correctly
-      const dialXml = dial.toString();
-      console.log(`🔍 Dial XML: ${dialXml}`);
-    } else {
-      // If no forwarding number, we still need to trigger the missed-call endpoint
-      // Instead of using redirect, which can cause Content-Type issues,
-      // we'll use a form POST action with the correct Content-Type
-      const missedCallUrl = `${baseUrl}/api/missed-call`;
-      
-      // Create a hidden form with the necessary parameters
-      const formParams = {
+    // Add a pause to ensure the greeting is heard
+    twiml.pause({ length: 1 });
+    
+    // Hang up the call
+    twiml.hangup();
+    
+    // -----------------------------------------------------------------
+    // 6. Trigger the missed-call endpoint separately to handle the auto-SMS
+    // -----------------------------------------------------------------
+    // We'll make a non-blocking request to the missed-call endpoint
+    // This ensures the auto-text is still sent without requiring Twilio to fetch it
+    try {
+      // Prepare the parameters for the missed-call endpoint
+      const missedCallParams = new URLSearchParams({
         From: fromNumber,
         To: toNumber,
         CallSid: CallSid,
         CallStatus: 'no-answer',
         ConnectDuration: '0'
-      };
-      
-      // Add a pause to ensure the greeting is heard
-      twiml.pause({ length: 1 });
-      
-      // Use a Gather with action to POST the form data with the correct Content-Type
-      const gather = twiml.gather({
-        action: missedCallUrl,
-        method: 'POST',
-        timeout: 1,
-        numDigits: 1
       });
       
-      // Add hidden input for each parameter
-      for (const [key, value] of Object.entries(formParams)) {
-        // We can't actually add form inputs in TwiML, but this is for documentation
-        console.log(`Adding form parameter: ${key}=${value}`);
-      }
+      // Log that we're triggering the missed-call endpoint
+      console.log(`🔄 Triggering missed-call endpoint with params: ${missedCallParams.toString()}`);
       
-      // Add a fallback redirect with explicit Content-Type header
-      // This is a backup in case the Gather doesn't trigger
-      twiml.redirect({
-        method: 'POST'
-      }, `${missedCallUrl}?From=${encodeURIComponent(fromNumber)}&To=${encodeURIComponent(toNumber)}&CallSid=${encodeURIComponent(CallSid)}&CallStatus=no-answer&ContentType=application/x-www-form-urlencoded`);
-      
-      console.log(`🔄 Using Gather with action URL: ${missedCallUrl}`);
+      // Make a non-blocking fetch to the missed-call endpoint
+      // We don't await this to avoid delaying the TwiML response
+      fetch(`${baseUrl}/api/missed-call`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: missedCallParams
+      }).catch(err => {
+        console.error('❌ Error triggering missed-call endpoint:', err);
+      });
+    } catch (error) {
+      console.error('❌ Error preparing missed-call request:', error);
     }
-
-    // -----------------------------------------------------------------
-    // 6. Let the missed-call endpoint handle the auto-SMS
-    // -----------------------------------------------------------------
-    // NOTE: We've removed the direct SMS sending from here to avoid duplication
-    // The missed-call endpoint will handle sending the auto-reply SMS
+    
     console.log(`📱 Auto-reply SMS will be handled by the missed-call endpoint`);
 
     // -----------------------------------------------------------------
     // 7. Return TwiML (HTTP 200 so Twilio won't retry)
     // -----------------------------------------------------------------
     const twimlString = twiml.toString();
-    console.log(`� Final TwiML response:`, twimlString);
+    console.log(`📄 Final TwiML response:`, twimlString);
     
     // Force-set header after TwiML is built and before any body is written
     res.writeHead(200, { 'Content-Type': 'text/xml' });
