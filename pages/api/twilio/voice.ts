@@ -185,10 +185,6 @@ export default async function handler(
       `📱 Chosen forwarding number: ${forwardingNumber || 'None available'}`
     );
 
-    const baseUrl = process.env.PUBLIC_BASE_URL || 'https://api.getsmarttext.com';
-    const missedCallUrl = `${baseUrl}/api/missed-call`;
-    console.log(`🔗 Using missed-call URL: ${missedCallUrl}`);
-
     // -----------------------------------------------------------------
     // 5. Build TwiML response
     // -----------------------------------------------------------------
@@ -207,42 +203,7 @@ export default async function handler(
     twiml.hangup();
     
     // -----------------------------------------------------------------
-    // 6. Trigger the missed-call endpoint separately to handle the auto-SMS
-    // -----------------------------------------------------------------
-    // We'll make a non-blocking request to the missed-call endpoint
-    // This ensures the auto-text is still sent without requiring Twilio to fetch it
-    try {
-      // Prepare the parameters for the missed-call endpoint
-      const missedCallParams = new URLSearchParams({
-        From: fromNumber,
-        To: toNumber,
-        CallSid: CallSid,
-        CallStatus: 'no-answer',
-        ConnectDuration: '0'
-      });
-      
-      // Log that we're triggering the missed-call endpoint
-      console.log(`🔄 Triggering missed-call endpoint with params: ${missedCallParams.toString()}`);
-      
-      // Make a non-blocking fetch to the missed-call endpoint
-      // We don't await this to avoid delaying the TwiML response
-      fetch(`${baseUrl}/api/missed-call`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: missedCallParams
-      }).catch(err => {
-        console.error('❌ Error triggering missed-call endpoint:', err);
-      });
-    } catch (error) {
-      console.error('❌ Error preparing missed-call request:', error);
-    }
-    
-    console.log(`📱 Auto-reply SMS will be handled by the missed-call endpoint`);
-
-    // -----------------------------------------------------------------
-    // 7. Return TwiML (HTTP 200 so Twilio won't retry)
+    // 6. Return TwiML (HTTP 200 so Twilio won't retry)
     // -----------------------------------------------------------------
     const twimlString = twiml.toString();
     console.log(`📄 Final TwiML response:`, twimlString);
@@ -252,7 +213,7 @@ export default async function handler(
     return res.end(twimlString);
   } catch (error: any) {
     // -----------------------------------------------------------------
-    // 8. Fallback error TwiML (still HTTP 200 per your preference)
+    // 7. Fallback error TwiML (still HTTP 200 per your preference)
     // -----------------------------------------------------------------
     console.error('❌ Voice handler error:', error.message);
     console.error('Stack trace:', error.stack);
