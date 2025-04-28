@@ -187,6 +187,20 @@ export default async function handler(
   console.log("🧩 Final parsed Duration:", finalDuration);
 
   // ---------------------------------------------------------------------------
+  // Check for duplicate CallSid immediately after parsing
+  // ---------------------------------------------------------------------------
+  const isDuplicate = await checkCallSidExists(finalCallSid);
+  if (isDuplicate) {
+    console.log(`[missed-call] Duplicate CallSid detected – skipping processing entirely: ${finalCallSid}`);
+    return res.status(200).json({
+      success: true,
+      callSid: finalCallSid,
+      callStatus: finalCallStatus,
+      duplicateDetected: true
+    });
+  }
+
+  // ---------------------------------------------------------------------------
   // Validate required fields (with more detailed error messages)
   // ---------------------------------------------------------------------------
   const missingFields: string[] = [];
@@ -372,20 +386,6 @@ if (shouldValidateSignature) {
     businessName: business.name,
     businessId: business.id
   });
-  
-  // Check if this CallSid has already been processed by looking in the database
-  // This is critical for serverless environments where in-memory Sets don't persist
-  const isDuplicate = await checkCallSidExists(finalCallSid);
-  if (isDuplicate) {
-    console.log(`[missed-call] Duplicate CallSid detected in database – skipping SMS: ${finalCallSid}`);
-    return res.status(200).json({
-      success: true,
-      callSid: finalCallSid,
-      callStatus: finalCallStatus,
-      ownerNotificationSent,
-      duplicateDetected: true
-    });
-  }
   
   if (shouldSendAutoReply) {
     console.log(`📱 Preparing to send auto-reply SMS to ${finalFrom}`);
