@@ -36,8 +36,9 @@ const TEST_MOCK_NUMBERS = {
 
 // Detect whether the request is running in test mode
 const isTestMode = (req: NextApiRequest): boolean => {
+  const testOverrides = req.body?._testOverrides ?? {};
   return (
-    (req.body && req.body._testOverrides && Object.keys(req.body._testOverrides).length > 0) ||
+    Object.keys(testOverrides).length > 0 ||
     req.query.disableOpenAI === 'true' ||
     req.query.testMode === 'true' ||
     process.env.NODE_ENV === 'test'
@@ -209,6 +210,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('[step 1] 📨 Parsed Twilio webhook body:', body);
     
     const { To, From, Body: messageBody, _testOverrides = {} } = body;
+    console.log('[new-message] Incoming SMS from', From, 'to', To, ':', messageBody);
     console.log('[step 1] Parsed payload:', { To, From, BodyLength: messageBody?.length, _testOverrides });
 
     if (!To || !From || !messageBody) {
