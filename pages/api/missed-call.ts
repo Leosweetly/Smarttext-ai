@@ -19,6 +19,20 @@ export const config = {
 };
 
 // -----------------------------------------------------------------------------
+// Duplicate prevention (in-memory store)
+// -----------------------------------------------------------------------------
+// Keep track of processed CallSids to prevent duplicate SMS for the same call
+const processedCallSids = new Set<string>();
+
+// Cleanup function to remove CallSids after 5 minutes to prevent memory bloat
+function scheduleCallSidCleanup(callSid: string) {
+  setTimeout(() => {
+    processedCallSids.delete(callSid);
+    console.log(`[missed-call] Removed CallSid from tracking: ${callSid}`);
+  }, 5 * 60 * 1000); // 5 minutes in milliseconds
+}
+
+// -----------------------------------------------------------------------------
 // Types & constants
 // -----------------------------------------------------------------------------
 
@@ -334,6 +348,22 @@ if (shouldValidateSignature) {
     businessId: business.id
   });
   
+  // Check if this CallSid has already been processed
+  if (processedCallSids.has(finalCallSid)) {
+    console.log(`[missed-call] Duplicate CallSid detected – skipping SMS: ${finalCallSid}`);
+    return res.status(200).json({
+      success: true,
+      callSid: finalCallSid,
+      callStatus: finalCallStatus,
+      ownerNotificationSent,
+      duplicateDetected: true
+    });
+  }
+  
+  // Add the CallSid to the processed set and schedule cleanup
+  processedCallSids.add(finalCallSid);
+  scheduleCallSidCleanup(finalCallSid);
+  
   if (shouldSendAutoReply) {
     console.log(`📱 Preparing to send auto-reply SMS to ${finalFrom}`);
     try {
@@ -377,6 +407,7 @@ if (shouldValidateSignature) {
           requestId: finalCallSid,
           bypassRateLimit: true // Bypass rate limiting to ensure the SMS is sent
         });
+        console.log(`[missed-call] SMS sent successfully for CallSid: ${finalCallSid}`);
         console.log('[missed-call] SMS sent to', finalFrom);
         console.log(`📤 Sent auto-reply to ${finalFrom}`, sms);
       
