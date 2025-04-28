@@ -390,28 +390,35 @@ if (shouldValidateSignature) {
   if (shouldSendAutoReply) {
     console.log(`📱 Preparing to send auto-reply SMS to ${finalFrom}`);
     try {
-      // Try to generate a custom response first
+      // Check for custom auto-reply first
       let body;
-      try {
-        console.log(`🤖 Attempting to generate custom response for ${business.name} (tier: ${business.subscription_tier || 'basic'})`);
-        body = await generateMissedCallResponse(business);
-        console.log(`✅ Generated custom response: "${body}"`);
-      } catch (genErr) {
-        console.error(`❌ Error generating custom response:`, genErr);
-        body = null;
-      }
-      
-      // Fall back to custom message or default if generation fails
-      if (!body) {
-        if (business.customSettings?.autoReplyMessage) {
-          body = business.customSettings.autoReplyMessage;
-          console.log(`📝 Using customSettings.autoReplyMessage: "${body}"`);
-        } else if (business.custom_settings?.autoReplyMessage) {
-          body = business.custom_settings.autoReplyMessage;
-          console.log(`📝 Using custom_settings.autoReplyMessage: "${body}"`);
-        } else {
-          body = `Hi! Thanks for calling ${business.name}. We missed you but will ring back ASAP.`;
-          console.log(`📝 Using default message: "${body}"`);
+      if (business?.custom_auto_reply?.trim()) {
+        console.log(`[missed-call] Using custom auto-reply for business ${business.name}`);
+        body = business.custom_auto_reply;
+      } else {
+        // If no custom auto-reply, try to generate an AI response
+        console.log(`[missed-call] No custom auto-reply set, using AI-generated response`);
+        try {
+          console.log(`🤖 Attempting to generate custom response for ${business.name} (tier: ${business.subscription_tier || 'basic'})`);
+          body = await generateMissedCallResponse(business);
+          console.log(`✅ Generated custom response: "${body}"`);
+        } catch (genErr) {
+          console.error(`❌ Error generating custom response:`, genErr);
+          body = null;
+        }
+        
+        // Fall back to custom message or default if generation fails
+        if (!body) {
+          if (business.customSettings?.autoReplyMessage) {
+            body = business.customSettings.autoReplyMessage;
+            console.log(`📝 Using customSettings.autoReplyMessage: "${body}"`);
+          } else if (business.custom_settings?.autoReplyMessage) {
+            body = business.custom_settings.autoReplyMessage;
+            console.log(`📝 Using custom_settings.autoReplyMessage: "${body}"`);
+          } else {
+            body = `Hi! Thanks for calling ${business.name}. We missed you but will ring back ASAP.`;
+            console.log(`📝 Using default message: "${body}"`);
+          }
         }
       }
       
