@@ -14,22 +14,47 @@ import {
   trackOwnerAlert 
 } from '../../lib/api-compat';
 
+// Import Supabase client for database operations
+import { supabase } from '../../lib/supabase';
+
 export const config = {
   api: { bodyParser: false },
 };
 
 // -----------------------------------------------------------------------------
-// Duplicate prevention (in-memory store)
+// Duplicate prevention (database-based for serverless compatibility)
 // -----------------------------------------------------------------------------
-// Keep track of processed CallSids to prevent duplicate SMS for the same call
-const processedCallSids = new Set<string>();
+/**
+ * Checks if a CallSid already exists in the database to prevent duplicate processing
+ * 
+ * This is critical for serverless environments like Vercel where:
+ * 1. In-memory variables don't persist between function invocations
+ * 2. Multiple instances of the function could run in parallel
+ * 3. Each cold start gets a fresh environment
+ * 
+ * Using the database as the source of truth ensures we don't send duplicate SMS
+ * regardless of which serverless instance handles the request.
+ */
+async function checkCallSidExists(callSid: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('call_events')
+      .select('id')  // Only need ID, not all columns
+      .eq('call_sid', callSid)
+      .eq('event_type', 'voice.missed')
+      .limit(1)
+      .maybeSingle(); // Only returns one record or null
 
-// Cleanup function to remove CallSids after 5 minutes to prevent memory bloat
-function scheduleCallSidCleanup(callSid: string) {
-  setTimeout(() => {
-    processedCallSids.delete(callSid);
-    console.log(`[missed-call] Removed CallSid from tracking: ${callSid}`);
-  }, 5 * 60 * 1000); // 5 minutes in milliseconds
+    if (error) {
+      console.error('[missed-call] Error checking CallSid existence:', error);
+      return false;
+    }
+
+    return !!data; // true if found, false if not
+  } catch (error) {
+    console.error('[missed-call] Error in checkCallSidExists:', error);
+    return false;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -348,9 +373,11 @@ if (shouldValidateSignature) {
     businessId: business.id
   });
   
-  // Check if this CallSid has already been processed
-  if (processedCallSids.has(finalCallSid)) {
-    console.log(`[missed-call] Duplicate CallSid detected – skipping SMS: ${finalCallSid}`);
+  // Check if this CallSid has already been processed by looking in the database
+  // This is critical for serverless environments where in-memory Sets don't persist
+  const isDuplicate = await checkCallSidExists(finalCallSid);
+  if (isDuplicate) {
+    console.log(`[missed-call] Duplicate CallSid detected in database – skipping SMS: ${finalCallSid}`);
     return res.status(200).json({
       success: true,
       callSid: finalCallSid,
@@ -359,10 +386,6 @@ if (shouldValidateSignature) {
       duplicateDetected: true
     });
   }
-  
-  // Add the CallSid to the processed set and schedule cleanup
-  processedCallSids.add(finalCallSid);
-  scheduleCallSidCleanup(finalCallSid);
   
   if (shouldSendAutoReply) {
     console.log(`📱 Preparing to send auto-reply SMS to ${finalFrom}`);
