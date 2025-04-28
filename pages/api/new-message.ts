@@ -35,8 +35,8 @@ const TEST_MOCK_NUMBERS = {
 };
 
 // Detect whether the request is running in test mode
-const isTestMode = (req: NextApiRequest): boolean => {
-  const testOverrides = req.body?._testOverrides ?? {};
+const isTestMode = (req: NextApiRequest, body: Record<string, any>): boolean => {
+  const testOverrides = body?._testOverrides ?? {};
   return (
     Object.keys(testOverrides).length > 0 ||
     req.query.disableOpenAI === 'true' ||
@@ -210,14 +210,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('[step 1] 📨 Parsed Twilio webhook body:', body);
     
     const { To, From, Body: messageBody, _testOverrides = {} } = body;
-    console.log('[new-message] Incoming SMS from', From, 'to', To, ':', messageBody);
+    console.log(`[new-message] Incoming SMS: From=${From || 'MISSING'}, To=${To || 'MISSING'}, Body="${messageBody || 'MISSING'}"`);
     console.log('[step 1] Parsed payload:', { To, From, BodyLength: messageBody?.length, _testOverrides });
 
-    if (!To || !From || !messageBody) {
-      console.error('[step 1] Missing required Twilio fields');
+    // Check for required fields with specific error reporting
+    const missingFields: string[] = [];
+    if (!To) missingFields.push('To');
+    if (!From) missingFields.push('From');
+    if (!messageBody) missingFields.push('Body');
+
+    if (missingFields.length > 0) {
+      console.error(`[step 1] Missing required Twilio fields: ${missingFields.join(', ')}`);
       return res.status(400).json({
         error: 'Missing required fields',
-        message: 'The Twilio webhook must include To, From, and Body fields',
+        message: `The Twilio webhook is missing required fields: ${missingFields.join(', ')}`,
+        missingFields
       });
     }
 
@@ -239,7 +246,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // ----------------------------------
     console.time('[step 3] businessLookup');
     let business: Business;
-    if (req.body.testMode === true || req.query.testMode === 'true') {
+    if (body.testMode === true || req.query.testMode === 'true') {
       console.info('[step 3] Using MOCK business record (testMode flag)');
       business = {
         id: 'test-business-id',
@@ -390,7 +397,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('[step 9] Prepared response', { responseSource, responseMessage });
 
-    if (isTestMode(req) && (/^\+1619/.test(From) || From === '+16193721633')) {
+    if (isTestMode(req, body) && (/^\+1619/.test(From) || From === '+16193721633')) {
       messageSid = `mock-${requestId}`;
       console.info(`[step 9][${requestId}] Mock SMS (test mode) sent to`, From);
     } else {
@@ -400,7 +407,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.info(`[step 9][${requestId}] Twilio SMS sent, SID:`, messageSid);
       } catch (twilioErr: any) {
         console.error(`[step 9][${requestId}] Twilio error:`, twilioErr.message);
-        if (isTestMode(req)) {
+        if (isTestMode(req, body)) {
           messageSid = `mock-error-${requestId}`;
         } else {
           return res.status(200).json({
