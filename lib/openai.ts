@@ -60,6 +60,7 @@ export async function generateMissedCallResponse(business: any): Promise<string>
  * @param {string} businessName - Name of the business
  * @param {string} businessType - Type/industry of the business
  * @param {Object} additionalInfo - Additional business information
+ * @param {string} systemPrompt - Custom system prompt to use for OpenAI
  * @returns {Promise<string>} - The generated response
  */
 export async function generateSmsResponse(
@@ -67,9 +68,11 @@ export async function generateSmsResponse(
   faqs: any[] = [], 
   businessName: string = '', 
   businessType: string = 'local', 
-  additionalInfo: any = null
+  additionalInfo: any = null,
+  systemPrompt: string = ''
 ): Promise<string> {
   console.log('generateSmsResponse called with:', { message, businessName, businessType });
+  console.log('Using system prompt:', systemPrompt);
   return 'Thanks for your message! We will get back to you soon.';
 }
 

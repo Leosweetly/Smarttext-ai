@@ -18,6 +18,7 @@ interface Business {
   custom_settings?: Record<string, any>;
   hours_json?: Record<string, string>;
   faqs_json?: FAQ[];
+  online_ordering_url?: string;  // URL for online ordering (optional)
 }
 
 // Duplicate interface removed
@@ -346,7 +347,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       location: business.custom_settings?.location,
       website: business.custom_settings?.website,
       orderingLink: business.custom_settings?.ordering_link,
+      online_ordering_url: business.online_ordering_url,
     };
+
+    // Construct dynamic system prompt based on business type and available information
+    let systemPrompt = `You are replying to a customer on behalf of ${businessName}, which is a ${businessType}. Respond politely and helpfully in a friendly, conversational tone.`;
+
+    // Add business-type specific instructions
+    if (businessType.toLowerCase() === 'restaurant') {
+      if (business.online_ordering_url) {
+        systemPrompt += ` If they ask about ordering food, placing an order, menu options, or takeout, suggest our online ordering site here: ${business.online_ordering_url}.`;
+      }
+    } else if (['autoshop', 'auto shop', 'plumber', 'electrician', 'mechanic', 'contractor'].includes(businessType.toLowerCase())) {
+      systemPrompt += ` If they mention needing a quote, estimate, scheduling service, or urgent help, offer to gather details and connect them with the owner for a personalized response.`;
+    } else {
+      systemPrompt += ` Answer their questions appropriately for our type of business.`;
+    }
+
+    // Add general instructions
+    systemPrompt += ` Keep responses brief, helpful and conversational. Do not make up information you don't have.`;
+
+    // Log the final system prompt for debugging
+    console.log('[step 8] Final OpenAI system prompt:', systemPrompt);
 
     let responseMessage = '';
     let responseSource: string = 'default';
@@ -361,8 +383,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (openAiEnabled) {
         console.time('[step 8] openAI');
         try {
+          // Pass the system prompt to OpenAI
           responseMessage = (await Promise.race([
-            generateSmsResponse(messageBody, faqs, businessName, businessType, additionalInfo),
+            generateSmsResponse(messageBody, faqs, businessName, businessType, additionalInfo, systemPrompt),
             new Promise<string>((_, reject) => setTimeout(() => reject('timeout'), 5000)),
           ])) ?? '';
           responseSource = 'openai';
