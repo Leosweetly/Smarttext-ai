@@ -5,6 +5,7 @@ import { getBusinessByPhoneNumberSupabase } from '../../lib/supabase';
 import { generateSmsResponse, classifyMessageIntent } from '../../lib/openai';
 import { sendSms } from '../../lib/twilio';
 import { trackOwnerAlert } from '../../lib/monitoring';
+import { sendUrgentOwnerAlert } from '../../lib/notifications';
 
 // TypeScript interfaces for business data
 interface Business {
@@ -367,9 +368,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Send owner alert if message is urgent
-    if (isUrgent && business.owner_phone) {
-      console.log('[step 7] 📱 Sending owner alert...');
-      await sendOwnerAlert(business, messageBody, From, urgencySource);
+    if (isUrgent) {
+      // Get owner phone from custom_settings with fallback to owner_phone
+      const ownerPhone = business.custom_settings?.ownerPhone || business.owner_phone;
+      
+      if (ownerPhone) {
+        console.log('[step 7] 📱 Sending owner alert...');
+        await sendUrgentOwnerAlert(
+          ownerPhone,
+          business.name, 
+          business.id,
+          messageBody, 
+          From, 
+          To,
+          urgencySource
+        );
+      } else {
+        console.warn('[step 7] ⚠️ Cannot send owner alert: No owner phone found in business settings');
+      }
     }
     console.timeEnd('[step 7] urgencyCheck');
 
