@@ -80,9 +80,54 @@ export async function generateSmsResponse(
  * Classify if a message is urgent based on business type context
  * @param {string} text - The customer's message to classify
  * @param {string} businessType - Type of business for context
- * @returns {Promise<string>} - Classification result
+ * @returns {Promise<boolean>} - True if the message is urgent, false otherwise
  */
-export async function classifyMessageIntent(text: string, businessType: string = 'local'): Promise<string> {
+export async function classifyMessageIntent(text: string, businessType: string = 'local'): Promise<boolean> {
   console.log('classifyMessageIntent called with:', { text, businessType });
-  return 'general';
+  
+  // This would typically use OpenAI to analyze the message content
+  // For now, we'll implement a simple heuristic based on business type
+  
+  const normalizedText = text.toLowerCase();
+  
+  // Business-specific urgency indicators
+  const urgencyIndicators: Record<string, string[]> = {
+    'restaurant': ['catering emergency', 'food poisoning', 'allergic reaction', 'urgent order'],
+    'autoshop': ['car broke down', 'stranded', 'won\'t start', 'accident', 'tow', 'smoking'],
+    'plumber': ['flooding', 'burst pipe', 'sewage', 'no water', 'water damage', 'leak'],
+    'electrician': ['sparks', 'power outage', 'electrical fire', 'shock', 'burning smell'],
+    'contractor': ['structural damage', 'roof leak', 'unsafe', 'collapse']
+  };
+  
+  // Get business-specific indicators or use general ones
+  const businessIndicators = urgencyIndicators[businessType.toLowerCase()] || [];
+  
+  // General urgency indicators that apply to all business types
+  const generalIndicators = [
+    'asap', 'right away', 'immediately', 'urgent', 'emergency', 
+    'critical', 'serious', 'important', 'priority', 'hurry',
+    'can\'t wait', 'desperate', 'help', 'problem', 'issue'
+  ];
+  
+  // Check for business-specific urgency indicators
+  const hasBusinessUrgency = businessIndicators.some(indicator => 
+    normalizedText.includes(indicator)
+  );
+  
+  // Check for general urgency indicators
+  const hasGeneralUrgency = generalIndicators.some(indicator => 
+    normalizedText.includes(indicator)
+  );
+  
+  // Determine if the message is urgent
+  const isUrgent = hasBusinessUrgency || hasGeneralUrgency;
+  
+  console.log('classifyMessageIntent result:', { 
+    isUrgent, 
+    hasBusinessUrgency, 
+    hasGeneralUrgency,
+    businessType 
+  });
+  
+  return isUrgent;
 }

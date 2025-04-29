@@ -51,6 +51,31 @@ interface FAQ {
   answer: string;
 }
 
+// Define standard urgency keywords that apply to all businesses
+const STANDARD_URGENCY_KEYWORDS = [
+  "urgent",
+  "emergency", 
+  "need help",
+  "need a quote",
+  "request service",
+  "broken",
+  "leaking",
+  "no power",
+  "no AC"
+];
+
+// Helper function to check if a message contains standard urgency keywords
+function detectStandardUrgency(message: string): string | null {
+  const normalizedMessage = message.toLowerCase();
+  
+  // Use .find() array method to get the matched keyword
+  const matchedKeyword = STANDARD_URGENCY_KEYWORDS.find(keyword => 
+    normalizedMessage.includes(keyword.toLowerCase())
+  );
+  
+  return matchedKeyword || null;
+}
+
 // Helper function to check if a message matches any custom alert keywords
 function matchesCustomKeywords(message: string, keywords?: string[]): boolean {
   if (!keywords || keywords.length === 0) return false;
@@ -310,9 +335,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.time('[step 7] urgencyCheck');
     let isUrgent = false;
     let urgencySource = '';
+    let matchedUrgentKeyword = '';
 
-    // First check custom keywords (case insensitive)
-    if (matchesCustomKeywords(messageBody, business.custom_alert_keywords)) {
+    // First check standard urgency keywords
+    const urgentKeyword = detectStandardUrgency(messageBody);
+    if (urgentKeyword) {
+      isUrgent = true;
+      urgencySource = 'standard_keywords';
+      matchedUrgentKeyword = urgentKeyword;
+      console.log(`[urgency detection] Keyword matched: "${urgentKeyword}"`);
+      console.log('[step 7] ⚠️ Urgent message detected via standard keywords');
+    }
+    // Then check custom keywords (case insensitive)
+    else if (matchesCustomKeywords(messageBody, business.custom_alert_keywords)) {
       isUrgent = true;
       urgencySource = 'custom_keywords';
       console.log('[step 7] ⚠️ Urgent message detected via custom keywords');
@@ -362,6 +397,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       systemPrompt += ` If they mention needing a quote, estimate, scheduling service, or urgent help, offer to gather details and connect them with the owner for a personalized response.`;
     } else {
       systemPrompt += ` Answer their questions appropriately for our type of business.`;
+    }
+    
+    // Add urgency acknowledgment if message is urgent
+    if (isUrgent) {
+      systemPrompt += ` The customer's message appears urgent. Acknowledge the urgency and let them know their request will be prioritized.`;
     }
 
     // Add general instructions
@@ -464,6 +504,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       responseSource,
       processingTime,
       messageSid,
+      urgentFlag: isUrgent ? true : undefined,
+      urgencySource: isUrgent ? urgencySource : undefined,
+      urgentKeyword: matchedUrgentKeyword || undefined
     });
   } catch (err: any) {
     console.error('[handler] UNHANDLED ERROR:', err);
