@@ -30,7 +30,11 @@ export async function sendUrgentOwnerAlert(
 ): Promise<boolean> {
   try {
     // Format the alert message
-    const alertMessage = `🚨 Urgent Customer Message for ${businessName}: ${customerMessage}`;
+    const alertMessage = 
+      `Customer is requesting attention: ${customerPhone}\n` +
+      `Business: ${businessName}\n` +
+      `Message: "${customerMessage}"\n` +
+      `(Detected via: ${detectionSource})`;
     
     // Generate a request ID for tracking
     const requestId = Math.random().toString(36).substring(2, 10);

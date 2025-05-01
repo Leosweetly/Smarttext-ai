@@ -101,7 +101,7 @@ async function sendOwnerAlert(
     }
     
     const alertMessage = 
-      `URGENT: New message from ${customerPhone}\n` +
+      `Customer is requesting attention: ${customerPhone}\n` +
       `Business: ${business.name}\n` +
       `Message: "${customerMessage}"\n` +
       `(Detected via: ${detectionSource})`;
@@ -289,6 +289,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           { question: 'Do you deliver?', answer: 'Yes, within 5 miles.' },
         ]
       };
+      
+      // Apply test overrides if provided
+      if (_testOverrides) {
+        // Apply business type override
+        if (_testOverrides.businessType) {
+          business.business_type = _testOverrides.businessType;
+        }
+        
+        // Apply online ordering URL override
+        if (_testOverrides.online_ordering_url) {
+          business.online_ordering_url = _testOverrides.online_ordering_url;
+          console.log('[step 3] Applied online_ordering_url override:', business.online_ordering_url);
+        }
+      }
+      
+      // Log the business object for debugging
+      console.log('[step 3] Business object after applying overrides:', JSON.stringify(business, null, 2));
     } else {
       const supabaseBusiness = await getBusinessByPhoneNumberSupabase(To);
 
@@ -322,48 +339,91 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('[step 5] FAQ count:', faqs.length);
 
     // ----------------------------------
-    // 6. FAQ matching helpers
+    // 6. Check for online ordering request
     // ----------------------------------
-    const normalize = (txt: string) =>
-      txt.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
+    console.time('[step 6] onlineOrderingCheck');
+    let isOnlineOrderingRequest = false;
+    let responseMessage = '';
+    let responseSource: string = 'default';
+    let matchedFaq: FAQ | undefined;
+    
+    // Check if business has online ordering URL and message contains ordering keywords
+    const matchResult = messageBody.toLowerCase().match(/order|ordering|place an order/);
+    const containsOrderingKeywords = matchResult !== null;
+    
+    console.log('[step 6] DEBUG: Online ordering check');
+    console.log('[step 6] DEBUG: messageBody:', messageBody);
+    console.log('[step 6] DEBUG: business.online_ordering_url:', business.online_ordering_url);
+    console.log('[step 6] DEBUG: matchResult:', matchResult);
+    console.log('[step 6] DEBUG: containsOrderingKeywords:', containsOrderingKeywords);
+    
+    // Convert to boolean to ensure we get true/false (not null/undefined)
+    isOnlineOrderingRequest = Boolean(business.online_ordering_url && containsOrderingKeywords);
+    
+    if (isOnlineOrderingRequest) {
+      console.log('[step 6] ✅ Online ordering request detected');
+      console.log(`[step 6] Matched keyword: "${matchResult ? matchResult[0] : 'none'}"`);
+      
+      // Skip FAQ matching and OpenAI processing
+      responseMessage = `You can place your order here: ${business.online_ordering_url}`;
+      responseSource = 'online_ordering_direct';
+      console.log('[step 6] Responding with online ordering URL');
+      console.log('[step 6] DEBUG: responseMessage:', responseMessage);
+      console.log('[step 6] DEBUG: responseSource:', responseSource);
+      console.log('[step 6] DEBUG: isOnlineOrderingRequest:', isOnlineOrderingRequest);
+    } else {
+      console.log('[step 6] ❌ Not an online ordering request');
+      console.log('[step 6] DEBUG: Condition failed:', business.online_ordering_url ? 'Has URL' : 'No URL', containsOrderingKeywords ? 'Has keywords' : 'No keywords');
+    }
+    console.timeEnd('[step 6] onlineOrderingCheck');
+    
+    // ----------------------------------
+    // 7. FAQ matching helpers (if not online ordering)
+    // ----------------------------------
+    if (!isOnlineOrderingRequest) {
+      const normalize = (txt: string) =>
+        txt.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
 
-    const matchedFaq = faqs.find((f) => normalize(messageBody).includes(normalize(f.question)));
-    console.log('[step 6] matchedFaq?', Boolean(matchedFaq));
+      matchedFaq = faqs.find((f) => normalize(messageBody).includes(normalize(f.question)));
+      console.log('[step 7] matchedFaq?', Boolean(matchedFaq));
+    }
 
     // ----------------------------------
-    // 7. Check for urgent message
+    // 8. Check for urgent message (if not online ordering)
     // ----------------------------------
-    console.time('[step 7] urgencyCheck');
+    console.time('[step 8] urgencyCheck');
     let isUrgent = false;
     let urgencySource = '';
     let matchedUrgentKeyword = '';
 
-    // First check standard urgency keywords
-    const urgentKeyword = detectStandardUrgency(messageBody);
-    if (urgentKeyword) {
-      isUrgent = true;
-      urgencySource = 'standard_keywords';
-      matchedUrgentKeyword = urgentKeyword;
-      console.log(`[urgency detection] Keyword matched: "${urgentKeyword}"`);
-      console.log('[step 7] ⚠️ Urgent message detected via standard keywords');
-    }
-    // Then check custom keywords (case insensitive)
-    else if (matchesCustomKeywords(messageBody, business.custom_alert_keywords)) {
-      isUrgent = true;
-      urgencySource = 'custom_keywords';
-      console.log('[step 7] ⚠️ Urgent message detected via custom keywords');
-    } 
-    // Then check using GPT intent classification
-    else if (process.env.ENABLE_OPENAI_FALLBACK !== 'false' && !disableOpenAI) {
-      try {
-        const isUrgentByGPT = await classifyMessageIntent(messageBody, business.business_type);
-        if (isUrgentByGPT) {
-          isUrgent = true;
-          urgencySource = 'gpt_classification';
-          console.log('[step 7] ⚠️ Urgent message detected via GPT classification');
+    if (!isOnlineOrderingRequest) {
+      // First check standard urgency keywords
+      const urgentKeyword = detectStandardUrgency(messageBody);
+      if (urgentKeyword) {
+        isUrgent = true;
+        urgencySource = 'standard_keywords';
+        matchedUrgentKeyword = urgentKeyword;
+        console.log(`[urgency detection] Keyword matched: "${urgentKeyword}"`);
+        console.log('[step 8] ⚠️ Urgent message detected via standard keywords');
+      }
+      // Then check custom keywords (case insensitive)
+      else if (matchesCustomKeywords(messageBody, business.custom_alert_keywords)) {
+        isUrgent = true;
+        urgencySource = 'custom_keywords';
+        console.log('[step 8] ⚠️ Urgent message detected via custom keywords');
+      } 
+      // Then check using GPT intent classification
+      else if (process.env.ENABLE_OPENAI_FALLBACK !== 'false' && !disableOpenAI) {
+        try {
+          const isUrgentByGPT = await classifyMessageIntent(messageBody, business.business_type);
+          if (isUrgentByGPT) {
+            isUrgent = true;
+            urgencySource = 'gpt_classification';
+            console.log('[step 8] ⚠️ Urgent message detected via GPT classification');
+          }
+        } catch (err) {
+          console.error('[step 8] Error during GPT urgency classification:', err);
         }
-      } catch (err) {
-        console.error('[step 7] Error during GPT urgency classification:', err);
       }
     }
 
@@ -373,7 +433,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const ownerPhone = business.custom_settings?.ownerPhone || business.owner_phone;
       
       if (ownerPhone) {
-        console.log('[step 7] 📱 Sending owner alert...');
+        console.log('[step 8] 📱 Sending owner alert...');
         await sendUrgentOwnerAlert(
           ownerPhone,
           business.name, 
@@ -384,108 +444,107 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           urgencySource
         );
       } else {
-        console.warn('[step 7] ⚠️ Cannot send owner alert: No owner phone found in business settings');
+        console.warn('[step 8] ⚠️ Cannot send owner alert: No owner phone found in business settings');
       }
     }
-    console.timeEnd('[step 7] urgencyCheck');
+    console.timeEnd('[step 8] urgencyCheck');
 
     // ----------------------------------
-    // 8. Build the response text
+    // 9. Build the response text (if not online ordering)
     // ----------------------------------
-    const businessType = business.business_type || 'local';
-    const additionalInfo = {
-      hours: business.hours_json ? JSON.stringify(business.hours_json) : null,
-      location: business.custom_settings?.location,
-      website: business.custom_settings?.website,
-      orderingLink: business.custom_settings?.ordering_link,
-      online_ordering_url: business.online_ordering_url,
-    };
+    if (!isOnlineOrderingRequest) {
+      const businessType = business.business_type || 'local';
+      const additionalInfo = {
+        hours: business.hours_json ? JSON.stringify(business.hours_json) : null,
+        location: business.custom_settings?.location,
+        website: business.custom_settings?.website,
+        orderingLink: business.custom_settings?.ordering_link,
+        online_ordering_url: business.online_ordering_url,
+      };
 
-    // Construct dynamic system prompt based on business type and available information
-    let systemPrompt = `You are replying to a customer on behalf of ${businessName}, which is a ${businessType}. Respond politely and helpfully in a friendly, conversational tone.`;
+      // Construct dynamic system prompt based on business type and available information
+      let systemPrompt = `You are replying to a customer on behalf of ${businessName}, which is a ${businessType}. Respond politely and helpfully in a friendly, conversational tone.`;
 
-    // Add business-type specific instructions
-    if (businessType.toLowerCase() === 'restaurant') {
-      if (business.online_ordering_url) {
-        systemPrompt += ` If they ask about ordering food, placing an order, menu options, or takeout, suggest our online ordering site here: ${business.online_ordering_url}.`;
+      // Add business-type specific instructions
+      if (businessType.toLowerCase() === 'restaurant') {
+        if (business.online_ordering_url) {
+          systemPrompt += ` If they ask about ordering food, placing an order, menu options, or takeout, suggest our online ordering site here: ${business.online_ordering_url}.`;
+        }
+      } else if (['autoshop', 'auto shop', 'plumber', 'electrician', 'mechanic', 'contractor'].includes(businessType.toLowerCase())) {
+        systemPrompt += ` If they mention needing a quote, estimate, scheduling service, or urgent help, offer to gather details and connect them with the owner for a personalized response.`;
+      } else {
+        systemPrompt += ` Answer their questions appropriately for our type of business.`;
       }
-    } else if (['autoshop', 'auto shop', 'plumber', 'electrician', 'mechanic', 'contractor'].includes(businessType.toLowerCase())) {
-      systemPrompt += ` If they mention needing a quote, estimate, scheduling service, or urgent help, offer to gather details and connect them with the owner for a personalized response.`;
-    } else {
-      systemPrompt += ` Answer their questions appropriately for our type of business.`;
-    }
-    
-    // Add urgency acknowledgment if message is urgent
-    if (isUrgent) {
-      systemPrompt += ` The customer's message appears urgent. Acknowledge the urgency and let them know their request will be prioritized.`;
-    }
+      
+      // Add urgency acknowledgment if message is urgent
+      if (isUrgent) {
+        systemPrompt += ` The customer's message appears urgent. Acknowledge the urgency and let them know their request will be prioritized.`;
+      }
 
-    // Add general instructions
-    systemPrompt += ` Keep responses brief, helpful and conversational. Do not make up information you don't have.`;
+      // Add general instructions
+      systemPrompt += ` Keep responses brief, helpful and conversational. Do not make up information you don't have.`;
 
-    // Log the final system prompt for debugging
-    console.log('[step 8] Final OpenAI system prompt:', systemPrompt);
+      // Log the final system prompt for debugging
+      console.log('[step 9] Final OpenAI system prompt:', systemPrompt);
 
-    let responseMessage = '';
-    let responseSource: string = 'default';
+      if (matchedFaq) {
+        responseMessage = matchedFaq.answer;
+        responseSource = 'faq';
+        console.log('[step 9] Responding with FAQ answer');
+      } else {
+        const openAiEnabled = process.env.ENABLE_OPENAI_FALLBACK !== 'false' && !disableOpenAI;
+        console.log('[step 9] openAiEnabled?', openAiEnabled);
+        if (openAiEnabled) {
+          console.time('[step 9] openAI');
+          try {
+            // Pass the system prompt to OpenAI
+            responseMessage = (await Promise.race([
+              generateSmsResponse(messageBody, faqs, businessName, businessType, additionalInfo, systemPrompt),
+              new Promise<string>((_, reject) => setTimeout(() => reject('timeout'), 5000)),
+            ])) ?? '';
+            responseSource = 'openai';
+            console.timeEnd('[step 9] openAI');
+          } catch (err) {
+            console.error('[step 9] OpenAI error or timeout:', err);
+            console.timeEnd('[step 9] openAI');
+          }
+        }
 
-    if (matchedFaq) {
-      responseMessage = matchedFaq.answer;
-      responseSource = 'faq';
-      console.log('[step 8] Responding with FAQ answer');
-    } else {
-      const openAiEnabled = process.env.ENABLE_OPENAI_FALLBACK !== 'false' && !disableOpenAI;
-      console.log('[step 8] openAiEnabled?', openAiEnabled);
-      if (openAiEnabled) {
-        console.time('[step 8] openAI');
-        try {
-          // Pass the system prompt to OpenAI
-          responseMessage = (await Promise.race([
-            generateSmsResponse(messageBody, faqs, businessName, businessType, additionalInfo, systemPrompt),
-            new Promise<string>((_, reject) => setTimeout(() => reject('timeout'), 5000)),
-          ])) ?? '';
-          responseSource = 'openai';
-          console.timeEnd('[step 8] openAI');
-        } catch (err) {
-          console.error('[step 8] OpenAI error or timeout:', err);
-          console.timeEnd('[step 8] openAI');
+        if (!responseMessage) {
+          const customFallback = business.custom_settings?.fallback_message;
+          if (customFallback) {
+            responseMessage = customFallback;
+            responseSource = 'custom_fallback';
+            console.log('[step 9] Using custom fallback message');
+          } else {
+            responseMessage =
+              "Sorry, we couldn't understand your question. Please call us directly.";
+            responseSource = 'default_fallback';
+            console.log('[step 9] Using default fallback message');
+          }
         }
       }
-
-      if (!responseMessage) {
-        const customFallback = business.custom_settings?.fallback_message;
-        if (customFallback) {
-          responseMessage = customFallback;
-          responseSource = 'custom_fallback';
-          console.log('[step 8] Using custom fallback message');
-        } else {
-          responseMessage =
-            "Sorry, we couldn't understand your question. Please call us directly.";
-          responseSource = 'default_fallback';
-          console.log('[step 8] Using default fallback message');
-        }
-      }
     }
 
     // ----------------------------------
-    // 9. Send SMS (mock if test mode)
+    // 10. Send SMS (mock if test mode)
     // ----------------------------------
     const requestId = Math.random().toString(36).substring(2, 10);
     const start = Date.now();
     let messageSid = '';
 
-    console.log('[step 9] Prepared response', { responseSource, responseMessage });
+    console.log('[step 10] Prepared response', { responseSource, responseMessage });
 
     if (isTestMode(req, body) && (/^\+1619/.test(From) || From === '+16193721633')) {
       messageSid = `mock-${requestId}`;
-      console.info(`[step 9][${requestId}] Mock SMS (test mode) sent to`, From);
+      console.info(`[step 10][${requestId}] Mock SMS (test mode) sent to`, From);
     } else {
       try {
         const message = await sendSms({ body: responseMessage, from: To, to: From, requestId });
         messageSid = message.sid;
-        console.info(`[step 9][${requestId}] Twilio SMS sent, SID:`, messageSid);
+        console.info(`[step 10][${requestId}] Twilio SMS sent, SID:`, messageSid);
       } catch (twilioErr: any) {
-        console.error(`[step 9][${requestId}] Twilio error:`, twilioErr.message);
+        console.error(`[step 10][${requestId}] Twilio error:`, twilioErr.message);
         if (isTestMode(req, body)) {
           messageSid = `mock-error-${requestId}`;
         } else {
@@ -504,25 +563,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const processingTime = Date.now() - start;
-    console.log('[step 9] Processing time ms:', processingTime);
+    console.log('[step 10] Processing time ms:', processingTime);
 
     // ----------------------------------
-    // 10. Success response
+    // 11. Success response
     // ----------------------------------
-    console.log('[step 10] Returning success JSON');
+    console.log('[step 11] Returning success JSON');
     return res.status(200).json({
       success: true,
       requestId,
       businessId,
       businessName,
-      matchedFaq: matchedFaq?.question ?? null,
+      matchedFaq: isOnlineOrderingRequest ? null : (matchedFaq?.question ?? null),
       responseMessage,
       responseSource,
       processingTime,
       messageSid,
       urgentFlag: isUrgent ? true : undefined,
       urgencySource: isUrgent ? urgencySource : undefined,
-      urgentKeyword: matchedUrgentKeyword || undefined
+      urgentKeyword: matchedUrgentKeyword || undefined,
+      onlineOrderingRequest: isOnlineOrderingRequest ? true : undefined
     });
   } catch (err: any) {
     console.error('[handler] UNHANDLED ERROR:', err);
