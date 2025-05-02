@@ -22,7 +22,105 @@ interface Business {
   online_ordering_url?: string;  // URL for online ordering (optional)
 }
 
-// Duplicate interface removed
+// TypeScript interface for normalized business settings
+interface NormalizedSettings {
+  twilioNumber: string;
+  ownerPhone: string | undefined;
+  autoReplyOptions: string[];
+}
+
+// Utility functions for business settings
+
+/**
+ * Normalizes business settings with appropriate fallbacks
+ * @param business The business record from Supabase
+ * @param debug Whether to log detailed debugging information
+ * @returns Normalized settings object
+ */
+function normalizeBusinessSettings(
+  business: Business, 
+  debug: boolean = false
+): NormalizedSettings {
+  const settings = business.custom_settings || {};
+  const businessType = business.business_type || 'unknown';
+  
+  // Define default options by business type
+  const defaultOptionsByType: Record<string, string[]> = {
+    restaurant: ["hours & address", "menu details", "online ordering link"],
+    autoshop: ["hours & address", "service quotes", "schedule an appointment"],
+    retail: ["hours & address", "product availability", "current promotions"],
+    salon: ["hours & address", "service list", "schedule an appointment"],
+    medical: ["hours & address", "appointment scheduling", "insurance questions"],
+    // Add more types as needed
+  };
+  
+  // Extract twilioNumber with fallback
+  const twilioNumber = settings.twilioNumber || business.twilio_phone;
+  if (debug && !settings.twilioNumber) {
+    console.log(`[settings] ℹ️ Using fallback twilio_phone: ${twilioNumber}`);
+  }
+  
+  // Extract ownerPhone with fallback
+  const ownerPhone = settings.ownerPhone || business.owner_phone;
+  if (debug && !settings.ownerPhone && business.owner_phone) {
+    console.log(`[settings] ℹ️ Using fallback owner_phone: ${ownerPhone}`);
+  }
+  
+  // Determine auto reply options with fallbacks
+  let autoReplyOptions: string[];
+  let optionsSource: string;
+  
+  if (settings.autoReplyOptions) {
+    autoReplyOptions = settings.autoReplyOptions;
+    optionsSource = 'custom_settings';
+  } else if (businessType !== 'unknown' && defaultOptionsByType[businessType]) {
+    autoReplyOptions = defaultOptionsByType[businessType];
+    optionsSource = `default_for_${businessType}`;
+  } else {
+    autoReplyOptions = ["hours & address", "online ordering link"];
+    optionsSource = 'generic_default';
+  }
+  
+  if (debug) {
+    console.log(`[settings] ℹ️ Using ${optionsSource} for autoReplyOptions`);
+  }
+  
+  return {
+    twilioNumber,
+    ownerPhone,
+    autoReplyOptions
+  };
+}
+
+/**
+ * Creates a friendly list from array items (e.g., "a, b, or c")
+ * @param items Array of strings to format
+ * @returns Formatted string
+ */
+function makeFriendlyList(items: string[]): string {
+  if (items.length === 0) return "";
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]} or ${items[1]}`;
+  
+  const lastItem = items[items.length - 1];
+  const otherItems = items.slice(0, -1).join(", ");
+  return `${otherItems}, or ${lastItem}`;
+}
+
+/**
+ * Formats settings for structured logging
+ * @param settings The normalized settings object
+ * @returns Object suitable for logging
+ */
+function formatSettingsForLog(settings: NormalizedSettings): Record<string, any> {
+  return {
+    twilioNumber: settings.twilioNumber,
+    ownerPhone: settings.ownerPhone || '(none)',
+    autoReplyOptionsCount: settings.autoReplyOptions.length,
+    autoReplyOptionsPreview: settings.autoReplyOptions.join(', ').substring(0, 50) + 
+      (settings.autoReplyOptions.join(', ').length > 50 ? '...' : '')
+  };
+}
 
 // Disable Next.js body parser to handle raw request body
 export const config = {
@@ -92,14 +190,19 @@ async function sendOwnerAlert(
   business: Business, 
   customerMessage: string, 
   customerPhone: string, 
-  detectionSource: string
+  detectionSource: string,
+  normalizedSettings?: NormalizedSettings
 ): Promise<boolean> {
+  // Use normalized settings if provided, otherwise fall back to business record
+  const ownerPhone = normalizedSettings?.ownerPhone || business.owner_phone;
+  const twilioNumber = normalizedSettings?.twilioNumber || business.twilio_phone;
+  
+  if (!ownerPhone) {
+    console.log('⚠️ Cannot send owner alert: No owner phone available');
+    return false;
+  }
+  
   try {
-    if (!business.owner_phone) {
-      console.log('⚠️ Cannot send owner alert: No owner_phone specified for business');
-      return false;
-    }
-    
     const alertMessage = 
       `Customer is requesting attention: ${customerPhone}\n` +
       `Business: ${business.name}\n` +
@@ -111,8 +214,8 @@ async function sendOwnerAlert(
       
     const message = await sendSms({
       body: alertMessage,
-      from: business.twilio_phone,
-      to: business.owner_phone,
+      from: twilioNumber,
+      to: ownerPhone,
       requestId,
       bypassRateLimit: true
     });
@@ -120,7 +223,7 @@ async function sendOwnerAlert(
     // Track the owner alert
     await trackOwnerAlert({
       businessId: business.id,
-      ownerPhone: business.owner_phone,
+      ownerPhone,
       customerPhone,
       alertType: 'urgent_message',
       messageContent: customerMessage,
@@ -132,7 +235,7 @@ async function sendOwnerAlert(
       console.error('Error tracking owner alert:', err);
     });
     
-    console.log(`✅ Owner alert sent to ${business.owner_phone} (${detectionSource})`);
+    console.log(`✅ Owner alert sent to ${ownerPhone} (${detectionSource})`);
     return true;
   } catch (error) {
     console.error('Error sending owner alert:', error);
@@ -140,7 +243,7 @@ async function sendOwnerAlert(
     // Track the failed owner alert
     await trackOwnerAlert({
       businessId: business.id,
-      ownerPhone: business.owner_phone || '',
+      ownerPhone: ownerPhone || '',
       customerPhone,
       alertType: 'urgent_message',
       messageContent: customerMessage,
@@ -163,6 +266,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   console.log('[handler] Headers:', req.headers);
   console.log('[handler] AIRTABLE_PAT set?:', Boolean(process.env.AIRTABLE_PAT));
   console.log('[handler] AIRTABLE_BASE_ID set?:', Boolean(process.env.AIRTABLE_BASE_ID));
+  
+  // Enable debug mode based on environment or query params
+  const enableDebug = 
+    process.env.DEBUG_SETTINGS === 'true' || 
+    req.query.debugSettings === 'true' ||
+    isTestMode(req, {});
 
   // Only allow POST requests
   if (req.method !== 'POST') {
@@ -236,7 +345,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     console.log('[step 1] 📨 Parsed Twilio webhook body:', body);
     
-    const { To, From, Body: messageBody, _testOverrides = {} } = body;
+    // Extract fields from the body
+    const To = body.To;
+    const From = body.From;
+    const messageBody = body.Body;
+    
+    // Parse _testOverrides if it's a string (from form-encoded data)
+    let _testOverrides = body._testOverrides || {};
+    if (typeof _testOverrides === 'string') {
+      try {
+        _testOverrides = JSON.parse(_testOverrides);
+      } catch (err) {
+        console.error('[step 1] Error parsing _testOverrides JSON string:', err);
+        _testOverrides = {};
+      }
+    }
+    
     console.log(`[new-message] Incoming SMS: From=${From || 'MISSING'}, To=${To || 'MISSING'}, Body="${messageBody || 'MISSING'}"`);
     console.log('[step 1] Parsed payload:', { To, From, BodyLength: messageBody?.length, _testOverrides });
 
@@ -273,7 +397,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // ----------------------------------
     console.time('[step 3] businessLookup');
     let business: Business;
-    if (body.testMode === true || req.query.testMode === 'true') {
+    if (body.testMode === true || body.testMode === 'true' || req.query.testMode === 'true') {
       console.info('[step 3] Using MOCK business record (testMode flag)');
       business = {
         id: 'test-business-id',
@@ -292,15 +416,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // Apply test overrides if provided
       if (_testOverrides) {
-        // Apply business type override
-        if (_testOverrides.businessType) {
-          business.business_type = _testOverrides.businessType;
-        }
-        
-        // Apply online ordering URL override
-        if (_testOverrides.online_ordering_url) {
-          business.online_ordering_url = _testOverrides.online_ordering_url;
-          console.log('[step 3] Applied online_ordering_url override:', business.online_ordering_url);
+        // If a complete business object is provided in _testOverrides, use it
+        if (_testOverrides.business) {
+          console.log('[step 3] Using business from _testOverrides');
+          business = _testOverrides.business;
+        } else {
+          // Apply business type override
+          if (_testOverrides.businessType) {
+            business.business_type = _testOverrides.businessType;
+          }
+          
+          // Apply online ordering URL override
+          if (_testOverrides.online_ordering_url) {
+            business.online_ordering_url = _testOverrides.online_ordering_url;
+            console.log('[step 3] Applied online_ordering_url override:', business.online_ordering_url);
+          }
         }
       }
       
@@ -321,6 +451,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const businessId = business.id;
     const businessName = business.name || 'this business';
     console.log('[step 3] Using business', { businessName, businessId });
+    
+    // ----------------------------------
+    // 3.5. Normalize business settings
+    // ----------------------------------
+    console.time('[step 3.5] normalizeSettings');
+    
+    // Use our extracted function with debug flag
+    const normalizedSettings = normalizeBusinessSettings(business, enableDebug);
+    const { twilioNumber, ownerPhone, autoReplyOptions } = normalizedSettings;
+    
+    console.log('[step 3.5] Normalized settings:', formatSettingsForLog(normalizedSettings));
+    console.timeEnd('[step 3.5] normalizeSettings');
 
     // ----------------------------------
     // 4. Respect auto‑reply toggle
@@ -429,9 +571,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Send owner alert if message is urgent
     if (isUrgent) {
-      // Get owner phone from custom_settings with fallback to owner_phone
-      const ownerPhone = business.custom_settings?.ownerPhone || business.owner_phone;
-      
       if (ownerPhone) {
         console.log('[step 8] 📱 Sending owner alert...');
         await sendUrgentOwnerAlert(
@@ -440,11 +579,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           business.id,
           messageBody, 
           From, 
-          To,
+          twilioNumber,  // Use normalized twilioNumber
           urgencySource
         );
       } else {
-        console.warn('[step 8] ⚠️ Cannot send owner alert: No owner phone found in business settings');
+        console.warn('[step 8] ⚠️ Cannot send owner alert: No owner phone found in normalized settings');
       }
     }
     console.timeEnd('[step 8] urgencyCheck');
@@ -462,6 +601,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         online_ordering_url: business.online_ordering_url,
       };
 
+      // Create a friendly list of auto-reply options
+      const optionsText = makeFriendlyList(autoReplyOptions);
+      
       // Construct dynamic system prompt based on business type and available information
       let systemPrompt = `You are replying to a customer on behalf of ${businessName}, which is a ${businessType}. Respond politely and helpfully in a friendly, conversational tone.`;
 
@@ -475,6 +617,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       } else {
         systemPrompt += ` Answer their questions appropriately for our type of business.`;
       }
+      
+      // Add common options to the prompt
+      systemPrompt += ` Common questions we can help with include: ${optionsText}.`;
       
       // Add urgency acknowledgment if message is urgent
       if (isUrgent) {
@@ -540,7 +685,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.info(`[step 10][${requestId}] Mock SMS (test mode) sent to`, From);
     } else {
       try {
-        const message = await sendSms({ body: responseMessage, from: To, to: From, requestId });
+        const message = await sendSms({ 
+          body: responseMessage, 
+          from: twilioNumber,  // Use normalized twilioNumber
+          to: From, 
+          requestId 
+        });
         messageSid = message.sid;
         console.info(`[step 10][${requestId}] Twilio SMS sent, SID:`, messageSid);
       } catch (twilioErr: any) {
