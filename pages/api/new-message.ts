@@ -20,6 +20,7 @@ interface Business {
   hours_json?: Record<string, string>;
   faqs_json?: FAQ[];
   online_ordering_url?: string;  // URL for online ordering (optional)
+  address?: string;  // Business address (optional)
 }
 
 // TypeScript interface for normalized business settings
@@ -485,26 +486,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // ----------------------------------
     console.time('[step 6] onlineOrderingCheck');
     let isOnlineOrderingRequest = false;
+    let isAddressRequest = false;
     let responseMessage = '';
     let responseSource: string = 'default';
     let matchedFaq: FAQ | undefined;
     
     // Check if business has online ordering URL and message contains ordering keywords
-    const matchResult = messageBody.toLowerCase().match(/order|ordering|place an order/);
-    const containsOrderingKeywords = matchResult !== null;
+    const orderMatchResult = messageBody.toLowerCase().match(/order|ordering|place an order/);
+    const containsOrderingKeywords = orderMatchResult !== null;
+    
+    // Check if message is asking for address (more comprehensive matching)
+    const addressMatchResult = messageBody.toLowerCase().match(/\baddress\b|\blocation\b|\bwhere\b.*\byou\b|\bwhere\b.*\bfind\b|\bdirections\b/);
+    const isAskingForAddress = addressMatchResult !== null;
     
     console.log('[step 6] DEBUG: Online ordering check');
     console.log('[step 6] DEBUG: messageBody:', messageBody);
     console.log('[step 6] DEBUG: business.online_ordering_url:', business.online_ordering_url);
-    console.log('[step 6] DEBUG: matchResult:', matchResult);
+    console.log('[step 6] DEBUG: orderMatchResult:', orderMatchResult);
     console.log('[step 6] DEBUG: containsOrderingKeywords:', containsOrderingKeywords);
+    console.log('[step 6] DEBUG: addressMatchResult:', addressMatchResult);
+    console.log('[step 6] DEBUG: isAskingForAddress:', isAskingForAddress);
     
     // Convert to boolean to ensure we get true/false (not null/undefined)
     isOnlineOrderingRequest = Boolean(business.online_ordering_url && containsOrderingKeywords);
     
-    if (isOnlineOrderingRequest) {
+    // Check for address request - make sure this runs before any other checks
+    if (isAskingForAddress && business.address) {
+      console.log('[step 6] ✅ Address request detected');
+      console.log(`[step 6] Matched keyword: "${addressMatchResult ? addressMatchResult[0] : 'none'}"`);
+      
+      // Skip FAQ matching and OpenAI processing
+      responseMessage = `Our address is: ${business.address}. Feel free to stop by during our business hours!`;
+      responseSource = 'address_keyword_match';
+      isAddressRequest = true;
+      console.log('[step 6] Responding with business address');
+      console.log('[step 6] DEBUG: responseMessage:', responseMessage);
+      console.log('[step 6] DEBUG: responseSource:', responseSource);
+      console.log('[step 6] DEBUG: isAddressRequest:', isAddressRequest);
+    }
+    else if (isOnlineOrderingRequest) {
       console.log('[step 6] ✅ Online ordering request detected');
-      console.log(`[step 6] Matched keyword: "${matchResult ? matchResult[0] : 'none'}"`);
+      console.log(`[step 6] Matched keyword: "${orderMatchResult ? orderMatchResult[0] : 'none'}"`);
       
       // Skip FAQ matching and OpenAI processing
       responseMessage = `You can place your order here: ${business.online_ordering_url}`;
@@ -520,9 +542,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.timeEnd('[step 6] onlineOrderingCheck');
     
     // ----------------------------------
-    // 7. FAQ matching helpers (if not online ordering)
+    // 7. FAQ matching helpers (if not online ordering or address request)
     // ----------------------------------
-    if (!isOnlineOrderingRequest) {
+    if (!isOnlineOrderingRequest && !isAddressRequest) {
       const normalize = (txt: string) =>
         txt.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
 
@@ -531,14 +553,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // ----------------------------------
-    // 8. Check for urgent message (if not online ordering)
+    // 8. Check for urgent message (if not online ordering or address request)
     // ----------------------------------
     console.time('[step 8] urgencyCheck');
     let isUrgent = false;
     let urgencySource = '';
     let matchedUrgentKeyword = '';
 
-    if (!isOnlineOrderingRequest) {
+    if (!isOnlineOrderingRequest && !isAddressRequest) {
       // First check standard urgency keywords
       const urgentKeyword = detectStandardUrgency(messageBody);
       if (urgentKeyword) {
@@ -589,13 +611,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.timeEnd('[step 8] urgencyCheck');
 
     // ----------------------------------
-    // 9. Build the response text (if not online ordering)
+    // 9. Build the response text (if not online ordering or address request)
     // ----------------------------------
-    if (!isOnlineOrderingRequest) {
+    if (!isOnlineOrderingRequest && !isAddressRequest) {
       const businessType = business.business_type || 'local';
       const additionalInfo = {
         hours: business.hours_json ? JSON.stringify(business.hours_json) : null,
         location: business.custom_settings?.location,
+        address: business.address, // Add address to additionalInfo
         website: business.custom_settings?.website,
         orderingLink: business.custom_settings?.ordering_link,
         online_ordering_url: business.online_ordering_url,

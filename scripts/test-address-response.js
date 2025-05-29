@@ -1,15 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * Test script for the /api/new-message API endpoint
+ * Test script for the address response functionality
  * 
- * This script tests core functionality of the SMS auto-reply system:
- * 1. Normal message (no urgency, no ordering)
- * 2. Ordering message (business has online ordering link)
- * 3. Urgent message (standard keyword match)
- * 4. Urgent message (GPT classification match)
+ * This script tests if the system correctly responds with the business address
+ * when a user texts a message containing the word "address".
  * 
- * Usage: node scripts/test-new-message.js
+ * Usage: node scripts/test-address-response.js
  */
 
 import dotenv from 'dotenv';
@@ -29,7 +26,8 @@ dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 // Default values
 const DEFAULT_TO = process.env.TWILIO_SMARTTEXT_NUMBER || '+18186518560'; // Twilio number
 const DEFAULT_FROM = process.env.TEST_PHONE_NUMBER || '+12125551234'; // Configurable sender's number
-const API_URL = process.env.API_URL || 'https://api.getsmarttext.com/api/new-message';
+// Use localhost for testing to ensure we're hitting our local implementation
+const API_URL = process.env.API_URL || 'http://localhost:3002/api/new-message';
 
 // Test configuration
 const TEST_MODE = true; // Set to true to prevent actual SMS sending
@@ -37,14 +35,6 @@ const TEST_MODE = true; // Set to true to prevent actual SMS sending
 /**
  * Run a single test against the new-message API endpoint
  * @param {Object} options - Test options
- * @param {string} options.testName - Name of the test
- * @param {string} options.description - Description of what's being tested
- * @param {string} options.to - Twilio phone number (To)
- * @param {string} options.from - Sender's phone number (From)
- * @param {string} options.body - Message text (Body)
- * @param {Object} [options.additionalPayload] - Additional payload fields
- * @param {Object} [options.expectedResponse] - Expected response properties
- * @param {number} [options.expectedStatus] - Expected HTTP status code
  * @returns {Promise<Object>} - Test result object
  */
 async function runTest({ 
@@ -77,8 +67,14 @@ async function runTest({
   console.log(JSON.stringify(payload, null, 2));
   
   try {
+    // Handle _testOverrides specially to ensure it's properly serialized
+    const payloadForForm = { ...payload };
+    if (payloadForForm._testOverrides) {
+      payloadForForm._testOverrides = JSON.stringify(payloadForForm._testOverrides);
+    }
+    
     // Convert payload to x-www-form-urlencoded format (Twilio webhook format)
-    const formData = querystring.stringify(payload);
+    const formData = querystring.stringify(payloadForForm);
     
     // Send the request to the API endpoint
     const response = await axios.post(API_URL, formData, {
@@ -115,43 +111,13 @@ async function runTest({
       mismatches.forEach(mismatch => console.log(chalk.red(`  - ${mismatch}`)));
     }
     
-    // Check for specific test conditions
-    let testSpecificChecks = [];
+    // Check for address in response
+    const hasAddress = response.data.responseMessage && 
+      response.data.responseMessage.includes('address');
     
-    // Check for urgency detection
-    if (expectedResponse.urgentFlag === true) {
-      const urgencyDetected = response.data.urgentFlag === true;
-      testSpecificChecks.push({
-        name: 'Urgency Detection',
-        passed: urgencyDetected,
-        message: urgencyDetected 
-          ? `✅ Urgency correctly detected via ${response.data.urgencySource || 'unknown source'}`
-          : '❌ Urgency was not detected'
-      });
-    } else if (expectedResponse.urgentFlag === false || expectedResponse.urgentFlag === undefined) {
-      const noUrgencyDetected = response.data.urgentFlag !== true;
-      testSpecificChecks.push({
-        name: 'No Urgency',
-        passed: noUrgencyDetected,
-        message: noUrgencyDetected 
-          ? '✅ Correctly did not detect urgency'
-          : '❌ Incorrectly detected urgency'
-      });
-    }
-    
-    // Check for online ordering link
-    if (expectedResponse.includeOrderingLink === true) {
-      const hasOrderingLink = response.data.responseMessage && 
-        (response.data.responseMessage.includes('order') || 
-         response.data.responseMessage.includes('ordering'));
-      testSpecificChecks.push({
-        name: 'Online Ordering Link',
-        passed: hasOrderingLink,
-        message: hasOrderingLink 
-          ? '✅ Online ordering link correctly included in response'
-          : '❌ Online ordering link not found in response'
-      });
-    }
+    console.log(hasAddress 
+      ? chalk.green('✅ Address found in response message') 
+      : chalk.red('❌ Address not found in response message'));
     
     // Display response source and message
     if (response.data.responseSource) {
@@ -162,17 +128,10 @@ async function runTest({
       console.log(chalk.yellow(`Response message: "${response.data.responseMessage}"`));
     }
     
-    // Display test-specific check results
-    if (testSpecificChecks.length > 0) {
-      console.log(chalk.cyan('\nTest-specific checks:'));
-      testSpecificChecks.forEach(check => {
-        console.log(check.passed ? chalk.green(check.message) : chalk.red(check.message));
-      });
-    }
-    
     // Determine overall test result
-    const testSpecificChecksPassed = testSpecificChecks.every(check => check.passed);
-    const passed = statusMatch && responseMatch && testSpecificChecksPassed;
+    // For the "No Address in Business Record" test, we don't expect the response to include the word "address"
+    const isNoAddressTest = testName === 'No Address in Business Record';
+    const passed = statusMatch && responseMatch && (isNoAddressTest || hasAddress);
     console.log(passed ? chalk.green('\n✅ TEST PASSED') : chalk.red('\n❌ TEST FAILED'));
     
     return {
@@ -208,7 +167,7 @@ async function runTest({
  */
 async function runAllTests() {
   console.log(chalk.bold.green('\n================================================='));
-  console.log(chalk.bold.green('  TWILIO WEBHOOK TEST SUITE FOR /api/new-message'));
+  console.log(chalk.bold.green('  ADDRESS RESPONSE TEST SUITE FOR /api/new-message'));
   console.log(chalk.bold.green('================================================='));
   
   if (TEST_MODE) {
@@ -217,81 +176,84 @@ async function runAllTests() {
   
   const testResults = [];
   
-  // Test 1: Normal message (no urgency, no ordering)
+  // Test 1: Direct address request
   testResults.push(await runTest({
-    testName: 'Normal Message',
-    description: 'Message with no urgency or ordering intent: "What are your business hours?"',
+    testName: 'Direct Address Request',
+    description: 'Message directly asking for address: "What is your address?"',
     to: DEFAULT_TO,
     from: DEFAULT_FROM,
-    body: 'What are your business hours?',
+    body: 'What is your address?',
     expectedResponse: {
       success: true,
-      urgentFlag: undefined // No urgency flag should be present
+      responseSource: 'address_keyword_match'
     },
     additionalPayload: {
       _testOverrides: {
-        businessType: 'restaurant' // Ensure we're testing with a restaurant type
+        business: {
+          id: 'test-business-id',
+          name: 'Test Business',
+          business_type: 'restaurant',
+          public_phone: DEFAULT_TO,
+          twilio_phone: DEFAULT_TO,
+          address: '123 Test St, San Diego, CA 92101',
+          owner_phone: '+15551234567',
+          custom_settings: { auto_reply_enabled: true }
+        }
       }
     }
   }));
   
-  // Test 2: Ordering message (business has online ordering link)
+  // Test 2: Indirect address request
   testResults.push(await runTest({
-    testName: 'Ordering Message',
-    description: 'Message with ordering intent: "I want to place an order"',
+    testName: 'Indirect Address Request',
+    description: 'Message indirectly asking for address: "Can you tell me your address please?"',
     to: DEFAULT_TO,
     from: DEFAULT_FROM,
-    body: 'I want to place an order',
+    body: 'Can you tell me your address please?',
     expectedResponse: {
       success: true,
-      urgentFlag: undefined, // No urgency flag should be present
-      responseSource: 'online_ordering_direct', // Should use direct online ordering response
-      onlineOrderingRequest: true // Should have online ordering request flag
-    },
-      additionalPayload: {
-        _testOverrides: {
-          businessType: 'restaurant',
-          online_ordering_url: 'https://order.restaurant.com' // Ensure online ordering URL is set
-        },
-        includeOrderingLink: true
-      }
-  }));
-  
-  // Test 3: Urgent message (standard keyword match)
-  testResults.push(await runTest({
-    testName: 'Urgent Message (Keyword)',
-    description: 'Message with standard urgency keyword: "This is an emergency!"',
-    to: DEFAULT_TO,
-    from: DEFAULT_FROM,
-    body: 'This is an emergency!',
-    expectedResponse: {
-      success: true,
-      urgentFlag: true,
-      urgencySource: 'standard_keywords'
+      responseSource: 'address_keyword_match'
     },
     additionalPayload: {
       _testOverrides: {
-        ownerPhone: '+15551234567' // Ensure owner phone is set for alert
+        business: {
+          id: 'test-business-id',
+          name: 'Test Business',
+          business_type: 'restaurant',
+          public_phone: DEFAULT_TO,
+          twilio_phone: DEFAULT_TO,
+          address: '123 Test St, San Diego, CA 92101',
+          owner_phone: '+15551234567',
+          custom_settings: { auto_reply_enabled: true }
+        }
       }
     }
   }));
   
-  // Test 4: Urgent message (GPT classification match)
+  // Test 3: No address in business record
   testResults.push(await runTest({
-    testName: 'Urgent Message (GPT Classification)',
-    description: 'Message with implied urgency for GPT detection: "Can you come today? It\'s really important"',
+    testName: 'No Address in Business Record',
+    description: 'Message asking for address but business has no address: "What is your address?"',
     to: DEFAULT_TO,
     from: DEFAULT_FROM,
-    body: 'Can you come today? It\'s really important',
+    body: 'What is your address?',
     expectedResponse: {
-      success: true
-      // Note: We don't strictly check for urgentFlag and urgencySource here
-      // as the GPT classification is non-deterministic in real environments
+      success: true,
+      // Should fall back to OpenAI
+      responseSource: 'openai'
     },
     additionalPayload: {
       _testOverrides: {
-        ownerPhone: '+15551234567', // Ensure owner phone is set for alert
-        forceGptUrgency: true // Force GPT to classify as urgent for testing
+        business: {
+          id: 'test-business-id',
+          name: 'Test Business',
+          business_type: 'restaurant',
+          public_phone: DEFAULT_TO,
+          twilio_phone: DEFAULT_TO,
+          // No address field
+          owner_phone: '+15551234567',
+          custom_settings: { auto_reply_enabled: true }
+        }
       }
     }
   }));

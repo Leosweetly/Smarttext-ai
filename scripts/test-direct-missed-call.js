@@ -12,9 +12,14 @@
  * - Second argument is the Twilio number (To)
  */
 
-const dotenv = require('dotenv');
-const path = require('path');
-const axios = require('axios');
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import axios from 'axios';
+
+// Get the directory name
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables from .env.local
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
@@ -33,8 +38,8 @@ async function simulateMissedCall(fromNumber, toNumber) {
     formData.append('To', toNumber);
     formData.append('CallStatus', 'no-answer'); // Simulate a no-answer call status
     
-    // Get the API base URL from environment or use default
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+    // Use the Vercel deployment URL directly
+    const apiBaseUrl = 'https://smarttext-webhook-opefypaz3-kyle-davis-projects-30fc1531.vercel.app';
     const missedCallUrl = `${apiBaseUrl}/api/missed-call`;
     
     console.log(`Sending request to: ${missedCallUrl}`);

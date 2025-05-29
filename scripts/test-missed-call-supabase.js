@@ -60,7 +60,7 @@ async function simulateMissedCall() {
       formData.append(key, value);
     });
     
-    const response = await fetch('http://localhost:3001/api/missed-call', {
+    const response = await fetch('https://smarttext-webhook-opefypaz3-kyle-davis-projects-30fc1531.vercel.app/api/missed-call', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'

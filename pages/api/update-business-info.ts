@@ -33,6 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       reservationLink,
       faqs,
       recordId,
+      customAutoTextMessage, // New field for custom auto-text message
     } = req.body;
 
     // context: Required fields validation
@@ -87,7 +88,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Convert fields to Supabase format
-    const supabaseFields = {
+    const supabaseFields: {
+      name: string | number;
+      public_phone: string | number;
+      business_type: string | number;
+      hours_json: string | number;
+      website: string | number;
+      team_size: string | number;
+      address: string | number;
+      email: string | number;
+      online_ordering_link: any;
+      reservation_link: any;
+      faqs_json: any;
+      custom_settings?: Record<string, any>;
+    } = {
       name: fields['Business Name'],
       public_phone: fields['Phone Number'],
       business_type: fields['Industry'],
@@ -100,6 +114,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       reservation_link: reservationLink || null,
       faqs_json: faqs || null
     };
+    
+    // Add custom auto-text message to custom_settings if provided
+    if (customAutoTextMessage) {
+      // Get existing custom_settings or create a new object
+      let customSettings = {};
+      
+      // If this is an update to an existing record, fetch the current custom_settings
+      if (recordId) {
+        const { data, error } = await supabase
+          .from('businesses')
+          .select('custom_settings')
+          .eq('id', recordId)
+          .single();
+          
+        if (!error && data && data.custom_settings) {
+          customSettings = data.custom_settings;
+        }
+      }
+      
+      // Update the custom_settings with the new auto-text message
+      customSettings = {
+        ...customSettings,
+        autoReplyMessage: customAutoTextMessage
+      };
+      
+      // Add the updated custom_settings to the supabaseFields
+      supabaseFields.custom_settings = customSettings;
+    }
 
     let record;
 

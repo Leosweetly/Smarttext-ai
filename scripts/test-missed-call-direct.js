@@ -19,9 +19,9 @@ const __dirname = path.dirname(__filename);
 // Load environment variables from .env.local
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
-// Default phone numbers
-const CALLER_NUMBER = '+12125551234'; // Your phone number
-const TWILIO_NUMBER = '+18186518560'; // SmartText AI Twilio number
+// Default phone numbers - Update these with the actual numbers
+const CALLER_NUMBER = '+16193721633'; // Your phone number (update this with your actual number)
+const TWILIO_NUMBER = '+18186518560'; // Malibu Country Kitchen Twilio number
 
 async function testMissedCall() {
   try {
@@ -34,8 +34,8 @@ async function testMissedCall() {
     formData.append('CallStatus', 'no-answer'); // Simulate a no-answer call status
     formData.append('CallSid', 'CA' + Math.random().toString(36).substring(2, 15)); // Generate a random CallSid
     
-    // Get the API base URL from environment or use default
-    const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3001'; // Updated to use port 3001
+    // Use the Vercel deployment URL directly
+    const apiBaseUrl = 'https://smarttext-webhook-opefypaz3-kyle-davis-projects-30fc1531.vercel.app';
     const missedCallUrl = `${apiBaseUrl}/api/missed-call`;
     
     console.log(`Sending request to: ${missedCallUrl}`);
