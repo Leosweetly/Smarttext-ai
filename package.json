@@ -47,7 +47,7 @@
     "monitoring:cleanup:dry-run": "node scripts/cleanup-monitoring-data.js --dry-run"
   },
   "dependencies": {
-    "@auth0/nextjs-auth0": "4.0.3",
+    "@auth0/nextjs-auth0": "^4.6.0",
     "@sentry/nextjs": "^7.80.0",
     "@supabase/supabase-js": "^2.49.4",
     "axios": "^1.6.2",
