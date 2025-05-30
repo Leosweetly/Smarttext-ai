@@ -18,23 +18,6 @@ console.log('🔍 Checking API directory contents before build:');
 if (fs.existsSync(apiDir)) {
   const apiFiles = fs.readdirSync(apiDir);
   console.log('📁 API directory files:', apiFiles);
-  
-  // Specifically check for airtable-sync.ts
-  const airtableSyncPath = path.join(apiDir, 'airtable-sync.ts');
-  if (fs.existsSync(airtableSyncPath)) {
-    console.log('✅ airtable-sync.ts exists before build');
-    
-    // Make a backup copy of the file to ensure it's not lost during the build process
-    const backupPath = path.join(process.cwd(), 'airtable-sync.ts.backup');
-    try {
-      fs.copyFileSync(airtableSyncPath, backupPath);
-      console.log('✅ Created backup of airtable-sync.ts');
-    } catch (error) {
-      console.error('❌ Error creating backup of airtable-sync.ts:', error.message);
-    }
-  } else {
-    console.log('❌ airtable-sync.ts does not exist before build');
-  }
 } else {
   console.log('❌ API directory does not exist');
 }
@@ -257,65 +240,8 @@ console.log('🔍 Checking API directory contents after build:');
 if (fs.existsSync(apiDir)) {
   const apiFiles = fs.readdirSync(apiDir);
   console.log('📁 API directory files after build:', apiFiles);
-  
-  // Specifically check for airtable-sync.ts
-  const airtableSyncPath = path.join(apiDir, 'airtable-sync.ts');
-  const backupPath = path.join(process.cwd(), 'airtable-sync.ts.backup');
-  
-  if (fs.existsSync(airtableSyncPath)) {
-    console.log('✅ airtable-sync.ts exists after build');
-  } else {
-    console.log('❌ airtable-sync.ts does not exist after build');
-    
-    // If the file doesn't exist but we have a backup, restore it
-    if (fs.existsSync(backupPath)) {
-      try {
-        // Ensure the api directory exists
-        if (!fs.existsSync(apiDir)) {
-          fs.mkdirSync(apiDir, { recursive: true });
-        }
-        
-        // Restore the file from backup
-        fs.copyFileSync(backupPath, airtableSyncPath);
-        console.log('✅ Restored airtable-sync.ts from backup');
-      } catch (error) {
-        console.error('❌ Error restoring airtable-sync.ts from backup:', error.message);
-      }
-    }
-  }
-  
-  // Clean up the backup file
-  if (fs.existsSync(backupPath)) {
-    try {
-      fs.unlinkSync(backupPath);
-      console.log('✅ Removed backup file');
-    } catch (error) {
-      console.error('❌ Error removing backup file:', error.message);
-    }
-  }
 } else {
   console.log('❌ API directory does not exist after build');
-  
-  // If the API directory doesn't exist, create it and restore the file from backup if available
-  const backupPath = path.join(process.cwd(), 'airtable-sync.ts.backup');
-  if (fs.existsSync(backupPath)) {
-    try {
-      // Create the API directory
-      fs.mkdirSync(apiDir, { recursive: true });
-      console.log('✅ Created API directory');
-      
-      // Restore the file from backup
-      const airtableSyncPath = path.join(apiDir, 'airtable-sync.ts');
-      fs.copyFileSync(backupPath, airtableSyncPath);
-      console.log('✅ Restored airtable-sync.ts from backup');
-      
-      // Clean up the backup file
-      fs.unlinkSync(backupPath);
-      console.log('✅ Removed backup file');
-    } catch (error) {
-      console.error('❌ Error restoring API directory and files:', error.message);
-    }
-  }
 }
 
 // Check lib directory after build

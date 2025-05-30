@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-05-30T21:12:18.234Z",
+  "endpoint": "/api/twilio/voice",
+  "phase": "pre-migration-baseline",
+  "test_scenario": "basic_voice_call",
+  "request": {
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": {
+      "To": "+15551234567",
+      "From": "+15559876543",
+      "CallSid": "test-call-sid-1748639537019"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "text/xml"
+    },
+    "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response><Say voice=\"alice\">Hey, thanks for calling Malibu Country Kitchen, we're currently unavailable but we will text you shortly.</Say><Pause length=\"1\"/><Hangup/></Response>"
+  },
+  "logs": {
+    "business_lookup": "✅ Business found: Malibu Country Kitchen (mock-business-id)",
+    "forwarding_number": "📱 Chosen forwarding number: +16193721633",
+    "twiml_generated": true,
+    "errors": [
+      "Missing Supabase client-side environment variables",
+      "Error in logMigrationOperation: Error: Supabase client not initialized"
+    ]
+  },
+  "functions_called": [
+    "getBusinessByPhoneNumberSupabase"
+  ],
+  "migration_notes": [
+    "Currently using lib/api-compat.js compatibility layer",
+    "Mock fallback working correctly",
+    "Supabase environment variables missing in test environment",
+    "trackSmsEvent imported but not used in this flow"
+  ]
+}

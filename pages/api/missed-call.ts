@@ -6,13 +6,17 @@ import getRawBody from 'raw-body';
 import { generateMissedCallResponse } from '../../lib/openai';
 import { sendSms } from '../../lib/twilio';
 
-// Import from compatibility layer that handles both development and production environments
+// Direct imports from Supabase and monitoring modules
 import { 
   getBusinessByPhoneNumberSupabase, 
-  logCallEventSupabase,
+  logCallEventSupabase
+} from '../../lib/supabase';
+import { 
   trackSmsEvent, 
   trackOwnerAlert 
-} from '../../lib/api-compat';
+} from '../../lib/monitoring';
+
+
 
 // Import Supabase client for database operations
 import { supabase } from '../../lib/supabase';

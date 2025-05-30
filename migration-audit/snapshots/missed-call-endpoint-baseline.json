@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-05-30T21:22:01.410Z",
+  "endpoint": "/api/missed-call",
+  "phase": "pre-migration-baseline",
+  "test_scenario": "basic_missed_call",
+  "request": {
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": {
+      "To": "+15551234567",
+      "From": "+15559876543",
+      "CallSid": "test-call-sid-1748640119701"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": "{\"success\":true,\"callSid\":\"test-call-sid-1748640119701\",\"callStatus\":\"no-answer\",\"ownerNotificationSent\":false}"
+  },
+  "logs": {
+    "business_lookup": "✅ Business found: Malibu Country Kitchen (mock-business-id)",
+    "auto_reply_attempted": true,
+    "sms_failed": "Invalid 'To' Phone Number (expected in test)",
+    "owner_notification": false,
+    "call_logged": true
+  },
+  "functions_called": [
+    "getBusinessByPhoneNumberSupabase",
+    "logCallEventSupabase", 
+    "trackSmsEvent",
+    "trackOwnerAlert"
+  ],
+  "migration_notes": [
+    "Currently using lib/api-compat.js compatibility layer",
+    "Mock fallback working correctly",
+    "Complex endpoint with 4 api-compat function calls",
+    "SMS failure expected due to test phone number format"
+  ]
+}

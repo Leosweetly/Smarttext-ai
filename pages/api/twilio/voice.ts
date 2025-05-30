@@ -17,11 +17,12 @@ import twilio, { validateRequest } from 'twilio';
 // Import the functions we need directly
 import { sendSms } from '../../../lib/twilio';
 
-// Import from compatibility layer that handles both development and production environments
-import { 
-  getBusinessByPhoneNumberSupabase,
-  trackSmsEvent 
-} from '../../../lib/api-compat.js';
+// Direct imports from Supabase and monitoring modules (migrated from api-compat layer)
+import { getBusinessByPhoneNumberSupabase } from '../../../lib/supabase.js';
+import { trackSmsEvent } from '../../../lib/monitoring.js';
+
+// Migration logging
+console.log('[MIGRATION] Voice endpoint now using direct Supabase imports (bypassing api-compat layer)');
 
 export const config = {
   api: { bodyParser: false } // we need the raw stream for signature validation

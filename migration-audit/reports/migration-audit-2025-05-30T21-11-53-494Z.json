@@ -1,0 +1,110 @@
+{
+  "audit": {
+    "timestamp": "2025-05-30T21-11-53-494Z",
+    "version": "1.0.0",
+    "phase": "Phase 1 - Pre-Migration Audit"
+  },
+  "analysis": {
+    "timestamp": "2025-05-30T21:11:53.504Z",
+    "endpoints": {
+      "pages/api/missed-call.ts": {
+        "hasAirtableCompat": false,
+        "hasDirectSupabase": true,
+        "functionCalls": [
+          "getBusinessByPhoneNumber",
+          "logCallEvent",
+          "trackSmsEvent",
+          "trackOwnerAlert",
+          "getBusinessByPhoneNumber",
+          "trackOwnerAlert",
+          "trackOwnerAlert",
+          "logCallEvent",
+          "trackSmsEvent",
+          "trackSmsEvent",
+          "trackSmsEvent"
+        ],
+        "complexity": 51,
+        "linesOfCode": 517
+      },
+      "pages/api/twilio/voice.ts": {
+        "hasAirtableCompat": false,
+        "hasDirectSupabase": false,
+        "functionCalls": [
+          "getBusinessByPhoneNumber",
+          "trackSmsEvent",
+          "getBusinessByPhoneNumber"
+        ],
+        "complexity": 14,
+        "linesOfCode": 246
+      }
+    },
+    "airtableReferences": [],
+    "supabaseReferences": [
+      "pages/api/missed-call.ts"
+    ],
+    "recommendations": [
+      {
+        "type": "migration_order",
+        "title": "Recommended Migration Order",
+        "description": "Migrate endpoints from simplest to most complex",
+        "order": [
+          {
+            "endpoint": "pages/api/twilio/voice.ts",
+            "complexity": 14,
+            "reason": "Medium complexity"
+          },
+          {
+            "endpoint": "pages/api/missed-call.ts",
+            "complexity": 51,
+            "reason": "High complexity"
+          }
+        ]
+      },
+      {
+        "type": "start_with",
+        "title": "Start Migration With",
+        "endpoint": "pages/api/twilio/voice.ts",
+        "reason": "Lowest complexity (14 points), 246 lines of code",
+        "hasAirtableCompat": false,
+        "hasDirectSupabase": false
+      }
+    ]
+  },
+  "snapshots": {
+    "timestamp": "2025-05-30T21:11:53.510Z",
+    "endpoints": {
+      "pages/api/missed-call.ts": {
+        "testFile": "scripts/test-pages-api-missed-call-ts.js",
+        "description": "Baseline test for pages/api/missed-call.ts",
+        "created": "2025-05-30T21:11:53.510Z"
+      },
+      "pages/api/twilio/voice.ts": {
+        "testFile": "scripts/test-pages-api-twilio-voice-ts.js",
+        "description": "Baseline test for pages/api/twilio/voice.ts",
+        "created": "2025-05-30T21:11:53.510Z"
+      }
+    }
+  },
+  "loggingConfig": {
+    "timestamp": "2025-05-30T21:11:53.510Z",
+    "logLevel": "DEBUG",
+    "targets": [
+      "lib/api-compat.js",
+      "lib/supabase.js",
+      "lib/migration-logger.js"
+    ],
+    "patterns": {
+      "airtable_calls": {},
+      "supabase_calls": {},
+      "business_lookups": {},
+      "call_logging": {}
+    }
+  },
+  "nextSteps": [
+    "Review migration recommendations",
+    "Run baseline tests to capture current behavior",
+    "Add enhanced logging to api-compat.js",
+    "Begin migration with recommended endpoint",
+    "Test each step thoroughly before proceeding"
+  ]
+}
