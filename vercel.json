@@ -13,7 +13,8 @@
         "skipBuildCache": true,
         "excludeFiles": ["**/test.ts", "**/test.js", "api/test.js", "pages/api/test.ts"],
         "includeFiles": [
-          "pages/api/airtable-sync.ts", 
+          "pages/api/**/*",
+          "app/api/**/*", 
           "lib/**/*", 
           "lib/supabase.js", 
           "lib/monitoring.js"
